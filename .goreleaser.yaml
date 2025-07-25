@@ -59,3 +59,20 @@ release:
   name_template: "Release v{{ .Version }}"
   draft: false
   prerelease: auto
+
+brews:
+  - name: logbasset
+    repository:
+      owner: andreagrandi
+      name: homebrew-tap
+    commit_author:
+      name: goreleaserbot
+      email: goreleaser@github.com
+    directory: Formula
+    homepage: "https://github.com/andreagrandi/logbasset"
+    description: "LogBasset - A tool for querying and tailing logs"
+    license: "MIT"
+    test: |
+      system "#{bin}/logbasset --version"
+    install: |
+      bin.install "logbasset"
