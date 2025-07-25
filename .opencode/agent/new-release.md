@@ -1,0 +1,10 @@
+---
+description: Create a new release for this application, bumping the version and updating the changelog
+---
+
+When asked to create a new release, you need to:
+- Make sure `make test` passes without errors
+- Bump the version number in internal/cmd/root.go: if you find `var Version = "0.1.3"` change to `var Version = "0.1.4"`
+- Update the changelog writing a short summary of the changes since last release (with bullet points)
+- do `git tag v<version>` (use the version you just bumped to in the `root.go`)
+- do `git push origin v<version>`
