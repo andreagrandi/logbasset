@@ -1,5 +1,11 @@
 # Changelog
 
+## v.0.1.1 - 2025-07-25
+
+### Fixed
+- Updated all workflows to use Go 1.24 consistently
+- Fixed GoReleaser configuration for proper archive formats (zip for Windows, tar.gz for Unix)
+
 ## v0.1.0 - 2025-07-25
 
 ### Added
