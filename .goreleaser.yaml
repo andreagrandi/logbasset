@@ -26,7 +26,9 @@ builds:
       - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
 
 archives:
-  - id: default
+  - id: unix
+    builds:
+      - default
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
@@ -34,12 +36,31 @@ archives:
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
-    formats:
-      - tar.gz
-      - zip
+    format: tar.gz
     files:
       - README.md
       - LICENSE
+    rlcp: true
+    filter:
+      exclude:
+        - goos: windows
+  - id: windows
+    builds:
+      - default
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format: zip
+    files:
+      - README.md
+      - LICENSE
+    filter:
+      include:
+        - goos: windows
 
 checksum:
   name_template: 'checksums.txt'
