@@ -1,5 +1,7 @@
 # LogBasset
 
+![LogBasset](logbasset.png)
+
 Command-line tool for accessing Scalyr services written in Go. This tool provides a fast, efficient way to query and analyze your logs from the command line.
 
 This is a Go implementation inspired by the original [scalyr-tool](https://github.com/scalyr/scalyr-tool), offering improved performance and cross-platform compatibility.
