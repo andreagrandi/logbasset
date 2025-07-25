@@ -197,7 +197,7 @@ func TestRootCommand(t *testing.T) {
 		{
 			name:     "help flag",
 			args:     []string{"--help"},
-			contains: "Scalyr CLI is a command-line tool",
+			contains: "LogBasset is a command-line tool",
 		},
 		{
 			name:     "version flag",
