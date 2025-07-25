@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.5 - 2025-07-25
+
+### Changed
+- Updated release process documentation with improved instructions
+
 ## v.0.1.2 - 2025-07-25
 
 ### Fixed

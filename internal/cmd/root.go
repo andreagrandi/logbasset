@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version = "0.1.3"
+var Version = "0.1.5"
 
 var rootCmd = &cobra.Command{
 	Use:   "logbasset",
