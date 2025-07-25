@@ -45,3 +45,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+          GORELEASER_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
