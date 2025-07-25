@@ -1,6 +1,6 @@
 # Changelog
 
-## v.0.1.1 - 2025-07-25
+## v.0.1.2 - 2025-07-25
 
 ### Fixed
 - Updated all workflows to use Go 1.24 consistently
