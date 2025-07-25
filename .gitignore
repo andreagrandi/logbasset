@@ -1,0 +1,23 @@
+# Binaries
+bin/
+scalyr-cli
+scalyr-cli.exe
+
+# Go build cache
+.cache/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+*.test
+*.out
+coverage.txt
