@@ -1,6 +1,6 @@
-# LogBasset
+# Log Basset
 
-![LogBasset](logbasset.png)
+<img src="logbasset.png" width="50%" alt="LogBasset">
 
 Command-line tool for accessing Scalyr services written in Go. This tool provides a fast, efficient way to query and analyze your logs from the command line.
 
