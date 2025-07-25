@@ -288,3 +288,8 @@ GOOS=windows GOARCH=amd64 go build -o bin/logbasset-windows-amd64.exe .
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
+
+## Disclaimer
+
+A large part of this codebase has been produced with AI tools. If this doesn't match with your tastes, please
+use some other tool 🙂
