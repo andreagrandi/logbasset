@@ -19,6 +19,13 @@ The following commands are currently supported:
 
 ## Installation
 
+### Homebrew (macOS/Linux)
+
+```bash
+brew tap andreagrandi/tap
+brew install logbasset
+```
+
 ### From Source
 
 ```bash
