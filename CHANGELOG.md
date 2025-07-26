@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.1 - 2025-07-26
+
+### Fixed
+- **GoReleaser configuration**: Fixed build path to reference correct main.go location (`cmd/logbasset/main.go`)
+- **Version injection**: Updated ldflags to properly inject version into the correct package
+
 ## v0.2.0 - 2025-07-26
 
 ### Changed
