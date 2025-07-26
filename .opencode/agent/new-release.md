@@ -8,5 +8,5 @@ When asked to create a new release, you need to:
 - Update the changelog writing a short summary of the changes since last release (with bullet points), follow existing format
 - git commit the changes you just did
 - git push the changes you just did
-- do `git tag v<version>` (use the version you just bumped to in the `root.go`)
+- do `git tag v<version>` (use the version you just bumped to in the `internal/app/app.go`)
 - do `git push origin v<version>`

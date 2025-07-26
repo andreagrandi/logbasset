@@ -1,13 +1,12 @@
-package cmd
+package cli
 
 import (
 	"fmt"
 	"os"
 
+	"github.com/andreagrandi/logbasset/internal/app"
 	"github.com/spf13/cobra"
 )
-
-var Version = "0.1.5"
 
 var rootCmd = &cobra.Command{
 	Use:   "logbasset",
@@ -21,7 +20,7 @@ The following commands are currently supported:
 - facet-query: Retrieve common values for a field
 - timeseries-query: Retrieve numeric / graph data from a timeseries
 - tail: Provide a live 'tail' of a log`,
-	Version: Version,
+	Version: app.Version,
 }
 
 var (
