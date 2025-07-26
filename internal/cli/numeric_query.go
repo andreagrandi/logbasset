@@ -38,14 +38,12 @@ func init() {
 }
 
 func runNumericQuery(cmd *cobra.Command, args []string) {
-	checkTokenAndExit()
-
 	var filter string
 	if len(args) > 0 {
 		filter = args[0]
 	}
 
-	c := client.New(token, server, verbose)
+	c := getConfig().GetClient()
 
 	params := client.NumericQueryParams{
 		Filter:    filter,
@@ -53,7 +51,7 @@ func runNumericQuery(cmd *cobra.Command, args []string) {
 		StartTime: numericQueryStartTime,
 		EndTime:   numericQueryEndTime,
 		Buckets:   numericQueryBuckets,
-		Priority:  priority,
+		Priority:  getConfig().Priority,
 	}
 
 	ctx := context.Background()

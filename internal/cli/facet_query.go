@@ -36,12 +36,10 @@ func init() {
 }
 
 func runFacetQuery(cmd *cobra.Command, args []string) {
-	checkTokenAndExit()
-
 	filter := args[0]
 	field := args[1]
 
-	c := client.New(token, server, verbose)
+	c := getConfig().GetClient()
 
 	params := client.FacetQueryParams{
 		Filter:    filter,
@@ -49,7 +47,7 @@ func runFacetQuery(cmd *cobra.Command, args []string) {
 		StartTime: facetQueryStartTime,
 		EndTime:   facetQueryEndTime,
 		Count:     facetQueryCount,
-		Priority:  priority,
+		Priority:  getConfig().Priority,
 	}
 
 	ctx := context.Background()

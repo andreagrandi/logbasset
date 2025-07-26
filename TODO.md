@@ -26,15 +26,15 @@ logbasset/
 ```
 
 **Tasks**:
-- [ ] **Add standard Go directories** - Create directory structure above
-- [ ] **Move main.go to cmd/logbasset/** - Follow standard Go project layout
-- [ ] **Split monolithic client package** - Break down 408-line client.go into focused files
-- [ ] **Create dedicated packages** - Implement internal packages as shown above
+- [x] **Add standard Go directories** - Create directory structure above
+- [x] **Move main.go to cmd/logbasset/** - Follow standard Go project layout
+- [x] **Split monolithic client package** - Break down 408-line client.go into focused files
+- [x] **Create dedicated packages** - Implement internal packages as shown above
 
 ### 2. Configuration & Environment Management
-- [ ] **Add structured configuration management** - Replace scattered environment variable reads with a config package using libraries like Viper
-- [ ] **Configuration validation** - Add validation for config values (e.g., server URLs, token format)
-- [ ] **Eliminate global variables** - Remove package-level vars (token, server, verbose) from cmd package
+- [x] **Add structured configuration management** - Replace scattered environment variable reads with a config package using libraries like Viper
+- [x] **Configuration validation** - Add validation for config values (e.g., server URLs, token format)
+- [x] **Eliminate global variables** - Remove package-level vars (token, server, verbose) from cmd package
 
 ### 3. Error Handling Improvements
 - [ ] **Structured error types** - Define custom error types for different failure modes (network, auth, validation)

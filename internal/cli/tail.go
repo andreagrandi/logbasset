@@ -30,19 +30,17 @@ func init() {
 }
 
 func runTail(cmd *cobra.Command, args []string) {
-	checkTokenAndExit()
-
 	var filter string
 	if len(args) > 0 {
 		filter = args[0]
 	}
 
-	c := client.New(token, server, verbose)
+	c := getConfig().GetClient()
 
 	params := client.TailParams{
 		Filter:   filter,
 		Lines:    tailLines,
-		Priority: priority,
+		Priority: getConfig().Priority,
 	}
 
 	ctx := context.Background()

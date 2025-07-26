@@ -42,25 +42,57 @@ Download the latest binary from the [releases page](https://github.com/andreagra
 
 ## Configuration
 
-You need to make your Scalyr API token available to the tool. The easiest way is to set the environment variable:
+You need to make your Scalyr API token available to the tool. LogBasset supports multiple configuration methods:
+
+### Environment Variables
+
+The easiest way is to set the environment variable:
 
 ```bash
 export scalyr_readlog_token='your-api-token-here'
 ```
 
-Alternatively, you can specify the token on the command line using the `--token` argument.
-
-You can find your API tokens at [scalyr.com/keys](https://www.scalyr.com/keys) -- look for "Read Logs" token.
-
-### Custom Server
-
-If you're using a custom Scalyr server, you can set it via environment variable:
+For custom servers:
 
 ```bash
 export scalyr_server='https://eu.scalyr.com'
 ```
 
-Or use the `--server` flag.
+### Configuration Files
+
+LogBasset also supports configuration files in YAML format. The tool will look for configuration files in these locations (in order):
+
+1. `./logbasset.yaml` (current directory)
+2. `~/.logbasset/logbasset.yaml` (user home directory)
+3. `~/.config/logbasset/logbasset.yaml` (XDG config directory)
+
+Example configuration file:
+
+```yaml
+token: your-api-token-here
+server: https://eu.scalyr.com
+verbose: false
+priority: high
+```
+
+### Command Line Flags
+
+You can also specify configuration values using command line flags:
+
+```bash
+logbasset --token=your-token --server=https://eu.scalyr.com query
+```
+
+### Configuration Priority
+
+Configuration values are applied in the following order (highest to lowest priority):
+
+1. Command line flags
+2. Environment variables
+3. Configuration file values
+4. Default values
+
+You can find your API tokens at [scalyr.com/keys](https://www.scalyr.com/keys) -- look for "Read Logs" token.
 
 ## Usage
 

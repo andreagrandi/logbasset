@@ -19,6 +19,47 @@ logbasset/
 └── examples/               # Usage examples
 ```
 
+## Configuration Management
+
+LogBasset now uses a structured configuration system with Viper:
+
+### Configuration Sources
+- Environment variables (prefixed with `scalyr_`)
+- Configuration files (YAML format)
+- Command-line flags
+- Default values
+
+### Configuration Locations
+- `./logbasset.yaml` (current directory)
+- `~/.logbasset/logbasset.yaml` (user home)  
+- `~/.config/logbasset/logbasset.yaml` (XDG config)
+
+### Configuration Validation
+- API token presence validation
+- Server URL format validation
+- Priority value validation (high|low)
+- Automatic type conversion and defaults
+
+### Usage in Code
+```go
+// Get configuration with validation
+cfg, err := config.New()
+if err != nil {
+    return err
+}
+
+// Override with flags
+cfg.SetFromFlags(token, server, verbose, priority)
+
+// Validate final config
+if err := cfg.Validate(); err != nil {
+    return err
+}
+
+// Get client
+client := cfg.GetClient()
+```
+
 ## Build/Test Commands
 - `make build` - Build the CLI tool (output to bin/)
 - `make test` - Run all tests

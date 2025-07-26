@@ -41,14 +41,12 @@ func init() {
 }
 
 func runTimeseriesQuery(cmd *cobra.Command, args []string) {
-	checkTokenAndExit()
-
 	var filter string
 	if len(args) > 0 {
 		filter = args[0]
 	}
 
-	c := client.New(token, server, verbose)
+	c := getConfig().GetClient()
 
 	params := client.TimeseriesQueryParams{
 		Filter:            filter,
@@ -56,7 +54,7 @@ func runTimeseriesQuery(cmd *cobra.Command, args []string) {
 		StartTime:         timeseriesQueryStartTime,
 		EndTime:           timeseriesQueryEndTime,
 		Buckets:           timeseriesQueryBuckets,
-		Priority:          priority,
+		Priority:          getConfig().Priority,
 		OnlyUseSummaries:  timeseriesQueryOnlyUseSummaries,
 		NoCreateSummaries: timeseriesQueryNoCreateSummaries,
 	}

@@ -41,14 +41,12 @@ func init() {
 }
 
 func runQuery(cmd *cobra.Command, args []string) {
-	checkTokenAndExit()
-
 	var filter string
 	if len(args) > 0 {
 		filter = args[0]
 	}
 
-	c := client.New(token, server, verbose)
+	c := getConfig().GetClient()
 
 	params := client.QueryParams{
 		Filter:    filter,
@@ -57,7 +55,7 @@ func runQuery(cmd *cobra.Command, args []string) {
 		Count:     queryCount,
 		Mode:      queryMode,
 		Columns:   queryColumns,
-		Priority:  priority,
+		Priority:  getConfig().Priority,
 	}
 
 	ctx := context.Background()
