@@ -8,7 +8,7 @@ logbasset/
 ├── internal/
 │   ├── app/                # Application logic & version info
 │   ├── cli/                # CLI command implementations  
-│   ├── client/             # API client (split: client.go, query.go, tail.go, auth.go)
+│   ├── client/             # API client (split: client.go, basic_query.go, power_query.go, numeric_query.go, facet_query.go, timeseries_query.go, tail.go, types.go)
 │   ├── config/             # Configuration management
 │   ├── output/             # Output formatting (JSON, CSV, table)
 │   └── errors/             # Centralized error handling
