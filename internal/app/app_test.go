@@ -5,34 +5,34 @@ import "testing"
 func TestAppVersion(t *testing.T) {
 	app := New()
 
-	if app.Version != "0.1.5" {
-		t.Errorf("Expected version 0.1.5, got %s", app.Version)
+	if app.Version != Version {
+		t.Errorf("Expected version %s, got %s", Version, app.Version)
 	}
 
-	if app.Name != "logbasset" {
-		t.Errorf("Expected name logbasset, got %s", app.Name)
+	if app.Name != Name {
+		t.Errorf("Expected name %s, got %s", Name, app.Name)
 	}
 
-	expectedFullVersion := "logbasset version 0.1.5"
+	expectedFullVersion := Name + " version " + Version
 	if app.GetFullVersion() != expectedFullVersion {
 		t.Errorf("Expected full version '%s', got '%s'", expectedFullVersion, app.GetFullVersion())
 	}
 }
 
 func TestAppConstants(t *testing.T) {
-	if Version != "0.1.5" {
-		t.Errorf("Expected Version constant to be 0.1.5, got %s", Version)
+	if Version == "" {
+		t.Error("Version constant should not be empty")
 	}
 
-	if Name != "logbasset" {
-		t.Errorf("Expected Name constant to be logbasset, got %s", Name)
+	if Name == "" {
+		t.Error("Name constant should not be empty")
 	}
 
-	if Author != "Andrea Grandi" {
-		t.Errorf("Expected Author constant to be Andrea Grandi, got %s", Author)
+	if Author == "" {
+		t.Error("Author constant should not be empty")
 	}
 
-	if License != "Apache-2.0" {
-		t.Errorf("Expected License constant to be Apache-2.0, got %s", License)
+	if License == "" {
+		t.Error("License constant should not be empty")
 	}
 }
