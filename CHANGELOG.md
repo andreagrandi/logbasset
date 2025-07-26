@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.3.0 - 2025-07-26
+
+### Added
+- **Structured error handling system**: Implemented comprehensive error types with custom error structs
+- **Standard Unix exit codes**: Added proper exit codes for different error conditions (auth=4, network=3, config=5, validation=6, usage=2)
+- **Enhanced error messages**: All errors now include helpful suggestions for resolution
+- **Comprehensive error tests**: Added full test suite for error handling with 100% coverage
+
+### Changed
+- **Error handling improvements**: Replaced generic `fmt.Errorf` with structured error types throughout codebase
+- **Main application flow**: Updated main.go to use `HandleErrorAndExit()` for proper exit code handling
+- **Client error handling**: Enhanced API client to use structured errors for better user experience
+- **Configuration validation**: Improved config validation with specific error types and suggestions
+
+### Technical Details
+- Added `internal/errors` package with custom error types for different failure modes
+- Implemented `LogBassetError` struct with Type, Message, Suggestion, Cause, and ExitCode fields
+- Updated client and config packages to use new structured error system
+- All errors now provide actionable suggestions to help users resolve issues
+
 ## v0.2.1 - 2025-07-26
 
 ### Fixed

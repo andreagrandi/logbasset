@@ -1,13 +1,13 @@
 package config
 
 import (
-	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/andreagrandi/logbasset/internal/client"
+	"github.com/andreagrandi/logbasset/internal/errors"
 	"github.com/spf13/viper"
 )
 
@@ -24,16 +24,16 @@ func New() (*Config, error) {
 	setDefaults(v)
 
 	if err := setupViper(v); err != nil {
-		return nil, fmt.Errorf("failed to setup configuration: %w", err)
+		return nil, errors.NewConfigError("failed to setup configuration", err)
 	}
 
 	config := &Config{}
 	if err := v.Unmarshal(config); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal configuration: %w", err)
+		return nil, errors.NewConfigError("failed to unmarshal configuration", err)
 	}
 
 	if err := validateConfig(config); err != nil {
-		return nil, fmt.Errorf("configuration validation failed: %w", err)
+		return nil, err
 	}
 
 	return config, nil
@@ -71,21 +71,21 @@ func setupViper(v *viper.Viper) error {
 
 func validateConfig(config *Config) error {
 	if config.Token == "" {
-		return fmt.Errorf("API token is required. Set scalyr_readlog_token environment variable, use --token flag, or add token to config file.\nYou can find API tokens at https://www.scalyr.com/keys")
+		return errors.NewAuthError("API token is required", nil)
 	}
 
 	if config.Server != "" {
 		if _, err := url.Parse(config.Server); err != nil {
-			return fmt.Errorf("invalid server URL '%s': %w", config.Server, err)
+			return errors.NewConfigError("invalid server URL", err)
 		}
 
 		if !strings.HasPrefix(config.Server, "http://") && !strings.HasPrefix(config.Server, "https://") {
-			return fmt.Errorf("server URL must start with http:// or https://")
+			return errors.NewConfigError("server URL must start with http:// or https://", nil)
 		}
 	}
 
 	if config.Priority != "" && config.Priority != "high" && config.Priority != "low" {
-		return fmt.Errorf("priority must be 'high' or 'low', got '%s'", config.Priority)
+		return errors.NewValidationError("priority must be 'high' or 'low'", nil)
 	}
 
 	return nil

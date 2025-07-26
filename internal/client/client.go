@@ -6,9 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/andreagrandi/logbasset/internal/errors"
 )
 
 const (
@@ -49,14 +52,18 @@ func (c *Client) SetToken(token string) {
 
 func (c *Client) makeRequest(ctx context.Context, endpoint string, params map[string]interface{}) (*http.Response, error) {
 	if c.token == "" {
-		return nil, fmt.Errorf("API token is required. Set scalyr_readlog_token environment variable or use --token flag")
+		return nil, errors.NewAuthError("API token is required", nil)
+	}
+
+	if _, err := url.Parse(c.server); err != nil {
+		return nil, errors.NewConfigError(fmt.Sprintf("invalid server URL '%s'", c.server), err)
 	}
 
 	params["token"] = c.token
 
 	jsonData, err := json.Marshal(params)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request data: %w", err)
+		return nil, errors.NewParseError("failed to marshal request data", err)
 	}
 
 	url := fmt.Sprintf("%s/api/%s", c.server, endpoint)
@@ -67,14 +74,14 @@ func (c *Client) makeRequest(ctx context.Context, endpoint string, params map[st
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, errors.NewNetworkError("failed to create request", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
+		return nil, errors.NewNetworkError("failed to execute request", err)
 	}
 
 	return resp, nil
