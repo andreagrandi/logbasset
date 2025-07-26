@@ -36,7 +36,6 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
-    format: tar.gz
     files:
       - README.md
       - LICENSE
@@ -60,7 +59,7 @@ release:
   draft: false
   prerelease: auto
 
-brews:
+homebrew:
   - name: logbasset
     repository:
       owner: andreagrandi
