@@ -8,7 +8,7 @@ before:
     - go generate ./...
 
 builds:
-  - main: ./main.go
+  - main: ./cmd/logbasset/main.go
     binary: logbasset
     env:
       - CGO_ENABLED=0
@@ -23,7 +23,7 @@ builds:
       - goos: windows
         goarch: arm64
     ldflags:
-      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+      - -s -w -X github.com/andreagrandi/logbasset/internal/app.Version={{.Version}}
 
 archives:
   - name_template: >-
