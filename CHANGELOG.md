@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.2.0 - 2025-07-26
+
+### Changed
+- **Major project restructuring**: Reorganized codebase to follow standard Go project layout conventions
+- **Moved main.go** to `cmd/logbasset/` directory following Go best practices
+- **Split monolithic client**: Broke down large client.go into focused, single-responsibility files
+- **Added new internal packages**: Introduced `app`, `config`, `output`, and `errors` packages for better organization
+- **Improved modularity**: Separated concerns between CLI commands, API client, and output formatting
+- **Updated build system**: Fixed Makefile to work with new project structure
+- **Enhanced documentation**: Updated project guides and added comprehensive TODO roadmap
+
+### Added
+- **Structured error handling**: New error types and centralized error management
+- **Output formatting system**: Dedicated package for handling different output formats
+- **Configuration management**: Centralized config handling for better maintainability
+- **Application metadata**: Dedicated app package for version and build information
+
 ## v0.1.5 - 2025-07-25
 
 ### Changed
