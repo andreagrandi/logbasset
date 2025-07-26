@@ -3,7 +3,7 @@
 # Build the binary
 build:
 	@mkdir -p bin
-	go build -o bin/logbasset .
+	go build -o bin/logbasset ./cmd/logbasset
 
 # Run tests
 test:
@@ -18,8 +18,8 @@ test-client:
 	go test ./internal/client
 
 # Run tests for specific package
-test-cmd:
-	go test ./internal/cmd
+test-cli:
+	go test ./internal/cli
 
 # Format code
 fmt:
@@ -46,10 +46,10 @@ deps:
 # Build for multiple platforms
 build-all:
 	@mkdir -p bin
-	GOOS=linux GOARCH=amd64 go build -o bin/logbasset-linux-amd64 .
-	GOOS=darwin GOARCH=amd64 go build -o bin/logbasset-darwin-amd64 .
-	GOOS=darwin GOARCH=arm64 go build -o bin/logbasset-darwin-arm64 .
-	GOOS=windows GOARCH=amd64 go build -o bin/logbasset-windows-amd64.exe .
+	GOOS=linux GOARCH=amd64 go build -o bin/logbasset-linux-amd64 ./cmd/logbasset
+	GOOS=darwin GOARCH=amd64 go build -o bin/logbasset-darwin-amd64 ./cmd/logbasset
+	GOOS=darwin GOARCH=arm64 go build -o bin/logbasset-darwin-arm64 ./cmd/logbasset
+	GOOS=windows GOARCH=amd64 go build -o bin/logbasset-windows-amd64.exe ./cmd/logbasset
 
 # Show help
 help:
@@ -58,7 +58,7 @@ help:
 	@echo "  test         - Run tests"
 	@echo "  test-verbose - Run tests with verbose output"
 	@echo "  test-client  - Run client tests only"
-	@echo "  test-cmd     - Run command tests only"
+	@echo "  test-cli     - Run CLI tests only"
 	@echo "  fmt          - Format code"
 	@echo "  vet          - Run static analysis"
 	@echo "  lint         - Run linter"

@@ -1,11 +1,30 @@
 # AGENTS.md - LogBasset Development Guide
 
+## Project Structure
+LogBasset follows the standard Go project layout:
+```
+logbasset/
+├── cmd/logbasset/main.go   # Main application entry point
+├── internal/
+│   ├── app/                # Application logic & version info
+│   ├── cli/                # CLI command implementations  
+│   ├── client/             # API client (split: client.go, basic_query.go, power_query.go, numeric_query.go, facet_query.go, timeseries_query.go, tail.go, types.go)
+│   ├── config/             # Configuration management
+│   ├── output/             # Output formatting (JSON, CSV, table)
+│   └── errors/             # Centralized error handling
+├── pkg/                    # Public APIs (if needed)
+├── configs/                # Config templates
+├── scripts/                # Build scripts
+├── docs/                   # Documentation
+└── examples/               # Usage examples
+```
+
 ## Build/Test Commands
 - `make build` - Build the CLI tool (output to bin/)
 - `make test` - Run all tests
 - `make test-verbose` - Run tests with verbose output
 - `make test-client` - Run tests for client package only
-- `make test-cmd` - Run tests for cmd package only
+- `make test-cli` - Run tests for CLI package only
 - `make fmt` - Format code
 - `make vet` - Static analysis
 - `make lint` - Run linter (requires golangci-lint)
@@ -16,7 +35,7 @@
 
 ## Code Style Guidelines
 - Use Go standard formatting (gofmt)
-- Package names: lowercase, single word (e.g., `client`, `cmd`)
+- Package names: lowercase, single word (e.g., `client`, `cli`)
 - Types: PascalCase (e.g., `QueryParams`, `Client`)
 - Functions/methods: PascalCase for exported, camelCase for unexported
 - Variables: camelCase (e.g., `httpClient`, `requestParams`)
