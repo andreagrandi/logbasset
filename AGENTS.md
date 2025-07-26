@@ -74,6 +74,46 @@ client := cfg.GetClient()
 - `make build-all` - Build for multiple platforms
 - `go test -v ./internal/client -run TestNew` - Run a single test function
 
+## Error Handling
+
+LogBasset uses a structured error handling system with custom error types and standard exit codes:
+
+### Error Types
+- `AuthError` - API token authentication issues (exit code 4)
+- `NetworkError` - Network/connection failures (exit code 3)
+- `ConfigError` - Configuration problems (exit code 5)
+- `ValidationError` - Input validation failures (exit code 6)
+- `UsageError` - Command usage errors (exit code 2)
+- `APIError` - API response errors (exit code 1)
+- `ParseError` - JSON parsing failures (exit code 1)
+
+### Error Handling Best Practices
+- Use structured errors from `internal/errors` package instead of `fmt.Errorf`
+- Include helpful suggestions in error messages
+- Use appropriate exit codes for different error types
+- Wrap underlying errors with context using the `Cause` field
+
+### Usage Example
+```go
+// Instead of:
+return fmt.Errorf("API token is required")
+
+// Use:
+return errors.NewAuthError("API token is required", nil)
+
+// With cause:
+return errors.NewNetworkError("failed to connect", err)
+```
+
+### Exit Code Reference
+- `0` - Success
+- `1` - General error
+- `2` - Usage error/command misuse
+- `3` - Network error
+- `4` - Authentication error
+- `5` - Configuration error
+- `6` - Validation error
+
 ## Code Style Guidelines
 - Use Go standard formatting (gofmt)
 - Package names: lowercase, single word (e.g., `client`, `cli`)
@@ -81,7 +121,7 @@ client := cfg.GetClient()
 - Functions/methods: PascalCase for exported, camelCase for unexported
 - Variables: camelCase (e.g., `httpClient`, `requestParams`)
 - Constants: PascalCase or ALL_CAPS (e.g., `DefaultServer`, `APIVersion`)
-- Use descriptive error messages with context wrapping: `fmt.Errorf("failed to X: %w", err)`
+- Use structured errors from `internal/errors` package instead of `fmt.Errorf`
 - Import ordering: standard library, third-party, local packages
 - Use interfaces for testability (e.g., HTTP client abstractions)
 - Struct initialization: use field names for clarity

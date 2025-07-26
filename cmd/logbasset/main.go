@@ -1,13 +1,11 @@
 package main
 
 import (
-	"os"
-
 	"github.com/andreagrandi/logbasset/internal/cli"
+	"github.com/andreagrandi/logbasset/internal/errors"
 )
 
 func main() {
-	if err := cli.Execute(); err != nil {
-		os.Exit(1)
-	}
+	err := cli.Execute()
+	errors.HandleErrorAndExit(err)
 }

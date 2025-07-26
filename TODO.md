@@ -37,9 +37,9 @@ logbasset/
 - [x] **Eliminate global variables** - Remove package-level vars (token, server, verbose) from cmd package
 
 ### 3. Error Handling Improvements
-- [ ] **Structured error types** - Define custom error types for different failure modes (network, auth, validation)
-- [ ] **Better error messages** - More descriptive errors with suggestions for resolution
-- [ ] **Exit codes** - Use standard exit codes (0=success, 1=general error, 2=misuse, etc.)
+- [x] **Structured error types** - Define custom error types for different failure modes (network, auth, validation)
+- [x] **Better error messages** - More descriptive errors with suggestions for resolution
+- [x] **Exit codes** - Use standard exit codes (0=success, 1=general error, 2=misuse, etc.)
 
 ### 4. Input Validation & CLI Best Practices
 - [ ] **Input validation** - Validate all user inputs (time formats, counts, etc.) before API calls
