@@ -33,16 +33,14 @@ func init() {
 }
 
 func runPowerQuery(cmd *cobra.Command, args []string) {
-	checkTokenAndExit()
-
 	query := args[0]
-	c := client.New(token, server, verbose)
+	c := getConfig().GetClient()
 
 	params := client.PowerQueryParams{
 		Query:     query,
 		StartTime: powerQueryStartTime,
 		EndTime:   powerQueryEndTime,
-		Priority:  priority,
+		Priority:  getConfig().Priority,
 	}
 
 	ctx := context.Background()
