@@ -1,7 +1,7 @@
 # Binaries
 bin/
-scalyr-cli
-scalyr-cli.exe
+dist/
+logbasset
 
 # Go build cache
 .cache/
