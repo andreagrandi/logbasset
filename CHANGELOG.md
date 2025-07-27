@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- HTTP client interfaces for better testability and dependency injection
+- Comprehensive unit tests across all packages with mock HTTP responses
+- `MockHTTPClient` and `NewWithHTTPClient()` constructor for testing
+
+### Changed
+- Client package coverage increased from 45.2% to 69.5%
+- Output package coverage increased to 98.9% with comprehensive formatter tests
+- Enhanced testing infrastructure with interface-based design patterns
+
 ## v0.3.0 - 2025-07-26
 
 ### Added

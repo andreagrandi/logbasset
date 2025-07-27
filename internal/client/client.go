@@ -22,11 +22,15 @@ const (
 type Client struct {
 	server     string
 	token      string
-	httpClient *http.Client
+	httpClient HTTPClient
 	verbose    bool
 }
 
 func New(token, server string, verbose bool) *Client {
+	return NewWithHTTPClient(token, server, verbose, &http.Client{Timeout: 30 * time.Second})
+}
+
+func NewWithHTTPClient(token, server string, verbose bool, httpClient HTTPClient) *Client {
 	if server == "" {
 		server = os.Getenv("scalyr_server")
 		if server == "" {
@@ -41,7 +45,7 @@ func New(token, server string, verbose bool) *Client {
 	return &Client{
 		server:     strings.TrimSuffix(server, "/"),
 		token:      token,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
+		httpClient: httpClient,
 		verbose:    verbose,
 	}
 }
