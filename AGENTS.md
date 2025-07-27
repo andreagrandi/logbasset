@@ -130,3 +130,76 @@ return errors.NewNetworkError("failed to connect", err)
 - Test function names: `TestFunctionName` or `TestFunctionName_Scenario`
 - Always defer `resp.Body.Close()` immediately after checking error for HTTP responses
 - Use table-driven tests with `tests := []struct{}` pattern for multiple test cases
+
+## Testing Guidelines
+
+### Test Coverage
+LogBasset has comprehensive test coverage across all packages:
+- **Client package**: 69.5% coverage with HTTP client abstraction
+- **Output package**: 98.9% coverage for all formatters 
+- **Config package**: 89.1% coverage for configuration management
+- **Errors package**: 75.9% coverage for error handling
+- **App package**: 100.0% coverage for version information
+
+### Interface-Based Testing
+The codebase uses interface abstractions for better testability:
+
+```go
+// HTTPClient interface allows dependency injection for testing
+type HTTPClient interface {
+    Do(req *http.Request) (*http.Response, error)
+}
+
+// ClientInterface defines the contract for the API client
+type ClientInterface interface {
+    Query(ctx context.Context, params QueryParams) (*QueryResponse, error)
+    // ... other methods
+}
+
+// MockHTTPClient for testing
+type MockHTTPClient struct {
+    DoFunc func(req *http.Request) (*http.Response, error)
+}
+```
+
+### HTTP Client Dependency Injection
+The client supports dependency injection for better testing:
+
+```go
+// Standard constructor for production use
+client := client.New("token", "server", false)
+
+// Constructor with custom HTTP client for testing
+mockClient := &MockHTTPClient{...}
+client := client.NewWithHTTPClient("token", "server", false, mockClient)
+```
+
+### Mock Testing with httptest
+Tests use Go's `httptest` package for realistic HTTP testing:
+
+```go
+server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    // Verify request structure
+    assert.Equal(t, "POST", r.Method)
+    assert.Equal(t, "/api/query", r.URL.Path)
+    
+    // Return mock response
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte(`{"status": "success"}`))
+}))
+defer server.Close()
+
+client := client.New("test-token", server.URL, false)
+// Test client methods...
+```
+
+### Test Organization
+- Use table-driven tests for multiple test cases
+- Test both success and error scenarios  
+- Verify request structure and response parsing
+- Test interface implementations with compile-time checks
+- Cover edge cases like empty data, invalid input, network errors
+
+## Project style
+- When you generate or update the CHANGELOD.md, you must be concise
+- Unless I ask you to bump the version, new additions to the CHANGELOG.md must be filled under [Unreleased] section on top.

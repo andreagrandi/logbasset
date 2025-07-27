@@ -47,10 +47,10 @@ logbasset/
 - [ ] **Global flags** - Move common flags (server, token) to persistent flags
 
 ### 5. Testing Foundation
-- [ ] **Increase test coverage** - Add comprehensive unit tests for all packages
-- [ ] **Interface abstractions** - Add interfaces for the client to improve testability
-- [ ] **Mock HTTP responses** - Use httptest for testing client functionality
-- [ ] **Dependency injection** - Make HTTP client configurable/injectable for better testing
+- [x] **Increase test coverage** - Add comprehensive unit tests for all packages
+- [x] **Interface abstractions** - Add interfaces for the client to improve testability
+- [x] **Mock HTTP responses** - Use httptest for testing client functionality
+- [x] **Dependency injection** - Make HTTP client configurable/injectable for better testing
 
 ### 6. Context Propagation
 - [ ] **Context propagation** - Ensure context is properly passed through all operations
