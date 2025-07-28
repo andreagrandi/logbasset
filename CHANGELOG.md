@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## v0.4.1 - 2025-07-28
+
+### Fixed
+- **GoReleaser configuration**: Fixed GoReleaser v2 compatibility by renaming `homebrew` section to `brews`
+
 ## v0.4.0 - 2025-07-28
 
 ### Added

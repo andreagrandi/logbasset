@@ -59,7 +59,7 @@ release:
   draft: false
   prerelease: auto
 
-homebrew:
+brews:
   - name: logbasset
     repository:
       owner: andreagrandi
