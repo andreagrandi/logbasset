@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -466,4 +467,110 @@ func TestMockHTTPClient_DefaultBehavior(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.NotNil(t, resp)
+}
+
+func TestClient_makeRequest_ContextCancellation(t *testing.T) {
+	// Mock client that simulates a slow response
+	mockClient := &MockHTTPClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			// Check if context was cancelled before processing
+			select {
+			case <-req.Context().Done():
+				return nil, req.Context().Err()
+			default:
+				time.Sleep(100 * time.Millisecond) // Simulate slow request
+				return &http.Response{
+					StatusCode: 200,
+					Body:       io.NopCloser(strings.NewReader(`{"status":"success"}`)),
+				}, nil
+			}
+		},
+	}
+
+	client := NewWithHTTPClient("test-token", "https://test.com", false, mockClient)
+
+	// Create a context that gets cancelled quickly
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	_, err := client.makeRequest(ctx, "query", map[string]interface{}{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "request was cancelled or timed out")
+}
+
+func TestClient_makeRequest_ContextTimeout(t *testing.T) {
+	// Mock client that simulates a slow response
+	mockClient := &MockHTTPClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			// Simulate a slow request
+			select {
+			case <-req.Context().Done():
+				return nil, req.Context().Err()
+			case <-time.After(200 * time.Millisecond):
+				return &http.Response{
+					StatusCode: 200,
+					Body:       io.NopCloser(strings.NewReader(`{"status":"success"}`)),
+				}, nil
+			}
+		},
+	}
+
+	client := NewWithHTTPClient("test-token", "https://test.com", false, mockClient)
+
+	// Create a context with a short timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	_, err := client.makeRequest(ctx, "query", map[string]interface{}{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "request was cancelled or timed out")
+}
+
+func TestClient_Query_ContextCancellation(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Simulate a slow response
+		time.Sleep(200 * time.Millisecond)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status": "success", "matches": []}`))
+	}))
+	defer server.Close()
+
+	client := New("test-token", server.URL, false)
+
+	// Create a context that gets cancelled quickly
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	params := QueryParams{Filter: "test"}
+	_, err := client.Query(ctx, params)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "request was cancelled or timed out")
+}
+
+func TestClient_Tail_ContextCancellation(t *testing.T) {
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status": "success", "matches": [], "continuationToken": "token123"}`))
+	}))
+	defer server.Close()
+
+	client := New("test-token", server.URL, false)
+
+	// Create a context that gets cancelled after a short time
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	eventChan := make(chan LogEvent, 10)
+	params := TailParams{Lines: 10}
+
+	err := client.Tail(ctx, params, eventChan)
+
+	// Should return context.DeadlineExceeded
+	assert.Equal(t, context.DeadlineExceeded, err)
+
+	// Should have made at least one request
+	assert.GreaterOrEqual(t, callCount, 1)
 }

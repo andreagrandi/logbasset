@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Added
+- **Context propagation**: Complete implementation of context propagation throughout all CLI operations
+- **Timeout support**: Global `--timeout` flag to configure request timeouts for all commands (default: 30s)
+- **Signal handling**: Graceful cancellation with Ctrl+C for all operations, especially tail command
+- **Context-aware error handling**: Enhanced error messages for timeout and cancellation scenarios
+- **Comprehensive context tests**: Added test coverage for context cancellation, timeouts, and error scenarios
+
+### Changed
+- **Enhanced timeout control**: All API operations now respect context timeouts and can be cancelled by user
+- **Improved error messages**: Context-related errors provide helpful suggestions for resolution
+- **Better tail experience**: Tail command now supports graceful cancellation without error spam
+
 ## v0.4.1 - 2025-07-28
 
 ### Fixed

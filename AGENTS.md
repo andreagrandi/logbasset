@@ -74,6 +74,22 @@ client := cfg.GetClient()
 - `make build-all` - Build for multiple platforms
 - `go test -v ./internal/client -run TestNew` - Run a single test function
 
+## CLI Usage with Context Support
+All commands now support timeout and cancellation:
+
+```bash
+# Set custom timeout (examples)
+logbasset query "error" --timeout 60s
+logbasset tail "error" --timeout 2m --lines 100
+logbasset power-query "count by server" --start 1h --timeout 30s
+
+# Graceful cancellation with Ctrl+C
+logbasset tail ".*" --lines 1000
+# Press Ctrl+C to stop cleanly
+
+# Default timeout is 30 seconds for all operations
+```
+
 ## Error Handling
 
 LogBasset uses a structured error handling system with custom error types and standard exit codes:
@@ -86,6 +102,7 @@ LogBasset uses a structured error handling system with custom error types and st
 - `UsageError` - Command usage errors (exit code 2)
 - `APIError` - API response errors (exit code 1)
 - `ParseError` - JSON parsing failures (exit code 1)
+- `ContextError` - Context cancellation/timeout errors (exit code 1)
 
 ### Error Handling Best Practices
 - Use structured errors from `internal/errors` package instead of `fmt.Errorf`
@@ -103,6 +120,9 @@ return errors.NewAuthError("API token is required", nil)
 
 // With cause:
 return errors.NewNetworkError("failed to connect", err)
+
+// Context-related errors:
+return errors.NewContextError("operation timed out", context.DeadlineExceeded)
 ```
 
 ### Exit Code Reference
@@ -130,6 +150,42 @@ return errors.NewNetworkError("failed to connect", err)
 - Test function names: `TestFunctionName` or `TestFunctionName_Scenario`
 - Always defer `resp.Body.Close()` immediately after checking error for HTTP responses
 - Use table-driven tests with `tests := []struct{}` pattern for multiple test cases
+
+## Context Propagation
+LogBasset implements comprehensive context propagation for:
+
+### Timeout Control
+- Global `--timeout` flag available for all commands (default: 30s)
+- Context deadlines are properly enforced in all HTTP operations
+- Clear error messages when operations time out
+
+### Cancellation Support
+- All commands support graceful cancellation with Ctrl+C (SIGINT/SIGTERM)
+- Tail command exits cleanly when cancelled without error messages
+- Context cancellation is properly propagated through the entire call stack
+
+### Implementation
+```go
+// CLI commands create context with timeout
+ctx, cancel := context.WithTimeout(context.Background(), getTimeout())
+defer cancel()
+
+// Signal handling for graceful cancellation
+sigChan := make(chan os.Signal, 1)
+signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+go func() {
+    <-sigChan
+    cancel()
+}()
+
+// All client methods accept and use context
+result, err := client.Query(ctx, params)
+```
+
+### Error Handling
+- Context cancellation errors provide user-friendly messages
+- Timeout errors suggest using `--timeout` flag to increase duration
+- Distinguished between user cancellation (Ctrl+C) and timeout scenarios
 
 ## Testing Guidelines
 

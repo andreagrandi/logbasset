@@ -3,7 +3,10 @@ package cli
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/andreagrandi/logbasset/internal/client"
 	"github.com/andreagrandi/logbasset/internal/errors"
@@ -58,12 +61,27 @@ func runTail(cmd *cobra.Command, args []string) {
 		Priority: getConfig().Priority,
 	}
 
-	ctx := context.Background()
+	// Create context that can be cancelled by user signals
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Set up signal handling for graceful cancellation
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigChan
+		cancel()
+	}()
+
 	eventChan := make(chan client.LogEvent)
 
 	go func() {
 		if err := c.Tail(ctx, clientParams, eventChan); err != nil {
-			errors.HandleErrorAndExit(err)
+			// Only report error if it's not due to cancellation
+			if ctx.Err() == nil {
+				errors.HandleErrorAndExit(err)
+			}
 		}
 	}()
 

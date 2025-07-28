@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -148,4 +149,44 @@ func TestLogBassetError_Unwrap(t *testing.T) {
 func TestLogBassetError_NilCause(t *testing.T) {
 	err := NewAuthError("test", nil)
 	assert.Nil(t, err.Unwrap())
+}
+
+func TestNewContextError(t *testing.T) {
+	tests := []struct {
+		name     string
+		cause    error
+		expected string
+	}{
+		{
+			name:     "context cancelled",
+			cause:    context.Canceled,
+			expected: "Operation was cancelled by user (Ctrl+C)",
+		},
+		{
+			name:     "context deadline exceeded",
+			cause:    context.DeadlineExceeded,
+			expected: "Operation timed out. Try increasing the timeout with --timeout flag",
+		},
+		{
+			name:     "other error",
+			cause:    fmt.Errorf("other error"),
+			expected: "Operation was cancelled or timed out",
+		},
+		{
+			name:     "nil cause",
+			cause:    nil,
+			expected: "Operation was cancelled or timed out",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := NewContextError("test message", tt.cause)
+			assert.Equal(t, ContextError, err.Type)
+			assert.Equal(t, "test message", err.Message)
+			assert.Equal(t, tt.expected, err.Suggestion)
+			assert.Equal(t, tt.cause, err.Cause)
+			assert.Equal(t, ExitGeneral, err.ExitCode)
+		})
+	}
 }

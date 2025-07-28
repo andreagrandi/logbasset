@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"context"
 	"fmt"
 	"os"
 )
@@ -15,6 +16,7 @@ const (
 	ParseError      ErrorType = "PARSE_ERROR"
 	ValidationError ErrorType = "VALIDATION_ERROR"
 	UsageError      ErrorType = "USAGE_ERROR"
+	ContextError    ErrorType = "CONTEXT_ERROR"
 )
 
 const (
@@ -135,6 +137,24 @@ func NewUsageError(message string, cause error) *LogBassetError {
 		Suggestion: "Use --help to see available commands and options",
 		Cause:      cause,
 		ExitCode:   ExitUsage,
+	}
+}
+
+func NewContextError(message string, cause error) *LogBassetError {
+	suggestion := "Operation was cancelled or timed out"
+	switch cause {
+	case context.Canceled:
+		suggestion = "Operation was cancelled by user (Ctrl+C)"
+	case context.DeadlineExceeded:
+		suggestion = "Operation timed out. Try increasing the timeout with --timeout flag"
+	}
+
+	return &LogBassetError{
+		Type:       ContextError,
+		Message:    message,
+		Suggestion: suggestion,
+		Cause:      cause,
+		ExitCode:   ExitGeneral,
 	}
 }
 
