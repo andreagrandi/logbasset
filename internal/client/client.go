@@ -85,6 +85,10 @@ func (c *Client) makeRequest(ctx context.Context, endpoint string, params map[st
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		// Check if the error is context-related
+		if ctx.Err() != nil {
+			return nil, errors.NewContextError("request was cancelled or timed out", ctx.Err())
+		}
 		return nil, errors.NewNetworkError("failed to execute request", err)
 	}
 

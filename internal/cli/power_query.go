@@ -5,6 +5,8 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/andreagrandi/logbasset/internal/client"
 	"github.com/andreagrandi/logbasset/internal/errors"
@@ -65,7 +67,19 @@ func runPowerQuery(cmd *cobra.Command, args []string) {
 		Priority:  getConfig().Priority,
 	}
 
-	ctx := context.Background()
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), getTimeout())
+	defer cancel()
+
+	// Set up signal handling for graceful cancellation
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigChan
+		cancel()
+	}()
+
 	result, err := c.PowerQuery(ctx, clientParams)
 	if err != nil {
 		errors.HandleErrorAndExit(err)

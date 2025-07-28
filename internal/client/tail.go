@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"time"
+
+	"github.com/andreagrandi/logbasset/internal/errors"
 )
 
 func (c *Client) Tail(ctx context.Context, params TailParams, outputChan chan<- LogEvent) error {
@@ -33,7 +35,7 @@ func (c *Client) Tail(ctx context.Context, params TailParams, outputChan chan<- 
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
+		return errors.NewNetworkError("failed to read response body", err)
 	}
 
 	if c.verbose {
@@ -42,11 +44,11 @@ func (c *Client) Tail(ctx context.Context, params TailParams, outputChan chan<- 
 
 	var result QueryResponse
 	if err := json.Unmarshal(body, &result); err != nil {
-		return fmt.Errorf("failed to parse response: %w", err)
+		return errors.NewParseError("failed to parse response", err)
 	}
 
 	if result.Status != "success" {
-		return fmt.Errorf("API error: %s", result.Message)
+		return errors.NewAPIError(result.Message, nil)
 	}
 
 	for _, event := range result.Matches {
@@ -69,16 +71,16 @@ func (c *Client) Tail(ctx context.Context, params TailParams, outputChan chan<- 
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				resp.Body.Close()
-				return fmt.Errorf("failed to read response body: %w", err)
+				return errors.NewNetworkError("failed to read response body", err)
 			}
 			resp.Body.Close()
 
 			if err := json.Unmarshal(body, &result); err != nil {
-				return fmt.Errorf("failed to parse response: %w", err)
+				return errors.NewParseError("failed to parse response", err)
 			}
 
 			if result.Status != "success" {
-				return fmt.Errorf("API error: %s", result.Message)
+				return errors.NewAPIError(result.Message, nil)
 			}
 
 			for _, event := range result.Matches {

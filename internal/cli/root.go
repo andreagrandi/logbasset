@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"time"
+
 	"github.com/andreagrandi/logbasset/internal/app"
 	"github.com/andreagrandi/logbasset/internal/config"
 	"github.com/spf13/cobra"
@@ -12,6 +14,7 @@ var (
 	flagServer   string
 	flagVerbose  bool
 	flagPriority string
+	flagTimeout  time.Duration
 )
 
 var rootCmd = &cobra.Command{
@@ -45,6 +48,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&flagServer, "server", "", "Scalyr server URL (can also use scalyr_server env var)")
 	rootCmd.PersistentFlags().BoolVar(&flagVerbose, "verbose", false, "Enable verbose output")
 	rootCmd.PersistentFlags().StringVar(&flagPriority, "priority", "high", "Query priority (high|low)")
+	rootCmd.PersistentFlags().DurationVar(&flagTimeout, "timeout", 30*time.Second, "Request timeout (e.g., 30s, 2m, 1h)")
 
 	rootCmd.AddCommand(queryCmd)
 	rootCmd.AddCommand(powerQueryCmd)
@@ -60,4 +64,8 @@ func Execute() error {
 
 func getConfig() *config.Config {
 	return cfg
+}
+
+func getTimeout() time.Duration {
+	return flagTimeout
 }

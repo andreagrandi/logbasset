@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/andreagrandi/logbasset/internal/errors"
 )
 
 func (c *Client) TimeseriesQuery(ctx context.Context, params TimeseriesQueryParams) (*NumericQueryResponse, error) {
@@ -44,7 +46,7 @@ func (c *Client) TimeseriesQuery(ctx context.Context, params TimeseriesQueryPara
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
+		return nil, errors.NewNetworkError("failed to read response body", err)
 	}
 
 	if c.verbose {
@@ -53,11 +55,11 @@ func (c *Client) TimeseriesQuery(ctx context.Context, params TimeseriesQueryPara
 
 	var result NumericQueryResponse
 	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
+		return nil, errors.NewParseError("failed to parse response", err)
 	}
 
 	if result.Status != "success" {
-		return nil, fmt.Errorf("API error: %s", result.Message)
+		return nil, errors.NewAPIError(result.Message, nil)
 	}
 
 	return &result, nil
