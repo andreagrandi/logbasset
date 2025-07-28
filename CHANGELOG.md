@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## v0.4.0 - 2025-07-28
+
 ### Added
 - **Comprehensive input validation system**: Implemented robust validation for time formats, counts, buckets, and query syntax across all commands
 - **Validation package**: New `internal/validation` package with extensive validation functions and comprehensive test coverage
