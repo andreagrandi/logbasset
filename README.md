@@ -17,6 +17,8 @@ The following commands are currently supported:
 - **timeseries-query**: Retrieve numeric / graph data from a timeseries
 - **tail**: Provide a live 'tail' of a log
 
+LogBasset includes comprehensive input validation that checks parameters before making API calls, ensuring you get immediate feedback for invalid time formats, counts, or other parameters.
+
 ## Installation
 
 ### Homebrew (macOS/Linux)
@@ -94,8 +96,28 @@ Configuration values are applied in the following order (highest to lowest prior
 
 You can find your API tokens at [scalyr.com/keys](https://www.scalyr.com/keys) -- look for "Read Logs" token.
 
-## Usage
+## Time Format Support
 
+LogBasset supports flexible time format specifications for start and end times:
+
+### Relative Time Formats
+- `24h` - 24 hours ago
+- `7d` - 7 days ago
+- `30m` - 30 minutes ago  
+- `60s` - 60 seconds ago
+
+### Absolute Time Formats
+- `2024-01-15` - Specific date
+- `2024-01-15 14:30` - Date and time
+- `2024-01-15 14:30:45` - Date, time with seconds
+
+### Time-Only Formats
+- `14:30` - Time in 24-hour format
+- `14:30:45` - Time with seconds
+- `2:30 PM` - Time in 12-hour format
+- `2:30:45 PM` - Time with seconds in 12-hour format
+
+## Usage
 ### Query Logs
 
 Retrieve and search your log data:

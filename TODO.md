@@ -42,9 +42,9 @@ logbasset/
 - [x] **Exit codes** - Use standard exit codes (0=success, 1=general error, 2=misuse, etc.)
 
 ### 4. Input Validation & CLI Best Practices
-- [ ] **Input validation** - Validate all user inputs (time formats, counts, etc.) before API calls
-- [ ] **Flag consistency** - Standardize flag naming conventions across commands
-- [ ] **Global flags** - Move common flags (server, token) to persistent flags
+- [x] **Input validation** - Validate all user inputs (time formats, counts, etc.) before API calls
+- [x] **Flag consistency** - Standardize flag naming conventions across commands  
+- [x] **Global flags** - Move common flags (server, token) to persistent flags
 
 ### 5. Testing Foundation
 - [x] **Increase test coverage** - Add comprehensive unit tests for all packages

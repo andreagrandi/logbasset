@@ -2,10 +2,10 @@ package cli
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/andreagrandi/logbasset/internal/client"
+	"github.com/andreagrandi/logbasset/internal/errors"
+	"github.com/andreagrandi/logbasset/internal/validation"
 	"github.com/spf13/cobra"
 )
 
@@ -46,9 +46,30 @@ func runTimeseriesQuery(cmd *cobra.Command, args []string) {
 		filter = args[0]
 	}
 
+	// Validate inputs
+	validationConfig := validation.DefaultConfig()
+	params := validation.QueryValidationParams{
+		StartTime:       timeseriesQueryStartTime,
+		EndTime:         timeseriesQueryEndTime,
+		Buckets:         timeseriesQueryBuckets,
+		Output:          timeseriesQueryOutput,
+		Priority:        getConfig().Priority,
+		Query:           filter,
+		ValidateBuckets: true,
+	}
+
+	if err := validation.ValidateQueryParams(params, validationConfig); err != nil {
+		errors.HandleErrorAndExit(err)
+	}
+
+	// Validate required field
+	if err := validation.ValidateRequiredField("start", timeseriesQueryStartTime); err != nil {
+		errors.HandleErrorAndExit(err)
+	}
+
 	c := getConfig().GetClient()
 
-	params := client.TimeseriesQueryParams{
+	clientParams := client.TimeseriesQueryParams{
 		Filter:            filter,
 		Function:          timeseriesQueryFunction,
 		StartTime:         timeseriesQueryStartTime,
@@ -60,10 +81,9 @@ func runTimeseriesQuery(cmd *cobra.Command, args []string) {
 	}
 
 	ctx := context.Background()
-	result, err := c.TimeseriesQuery(ctx, params)
+	result, err := c.TimeseriesQuery(ctx, clientParams)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		errors.HandleErrorAndExit(err)
 	}
 
 	switch timeseriesQueryOutput {

@@ -7,6 +7,8 @@ import (
 	"os"
 
 	"github.com/andreagrandi/logbasset/internal/client"
+	"github.com/andreagrandi/logbasset/internal/errors"
+	"github.com/andreagrandi/logbasset/internal/validation"
 	"github.com/spf13/cobra"
 )
 
@@ -34,9 +36,29 @@ func init() {
 
 func runPowerQuery(cmd *cobra.Command, args []string) {
 	query := args[0]
+
+	// Validate inputs
+	validationConfig := validation.DefaultConfig()
+	params := validation.QueryValidationParams{
+		StartTime: powerQueryStartTime,
+		EndTime:   powerQueryEndTime,
+		Output:    powerQueryOutput,
+		Priority:  getConfig().Priority,
+		Query:     query,
+	}
+
+	if err := validation.ValidateQueryParams(params, validationConfig); err != nil {
+		errors.HandleErrorAndExit(err)
+	}
+
+	// Validate required field
+	if err := validation.ValidateRequiredField("start", powerQueryStartTime); err != nil {
+		errors.HandleErrorAndExit(err)
+	}
+
 	c := getConfig().GetClient()
 
-	params := client.PowerQueryParams{
+	clientParams := client.PowerQueryParams{
 		Query:     query,
 		StartTime: powerQueryStartTime,
 		EndTime:   powerQueryEndTime,
@@ -44,10 +66,9 @@ func runPowerQuery(cmd *cobra.Command, args []string) {
 	}
 
 	ctx := context.Background()
-	result, err := c.PowerQuery(ctx, params)
+	result, err := c.PowerQuery(ctx, clientParams)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		errors.HandleErrorAndExit(err)
 	}
 
 	switch powerQueryOutput {
