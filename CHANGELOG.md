@@ -3,14 +3,25 @@
 ## [Unreleased]
 
 ### Added
+- **Comprehensive input validation system**: Implemented robust validation for time formats, counts, buckets, and query syntax across all commands
+- **Validation package**: New `internal/validation` package with extensive validation functions and comprehensive test coverage
+- **Enhanced CLI error handling**: All commands now provide clear validation errors with helpful suggestions for resolution
 - HTTP client interfaces for better testability and dependency injection
 - Comprehensive unit tests across all packages with mock HTTP responses
 - `MockHTTPClient` and `NewWithHTTPClient()` constructor for testing
 
 ### Changed
+- **Improved user experience**: Commands now validate inputs before making API calls, providing immediate feedback for invalid parameters
+- **Standardized error handling**: All validation errors use structured error types with consistent formatting and exit codes
+- **Enhanced flag handling**: Input validation is consistently applied across all CLI commands with appropriate validation flags
 - Client package coverage increased from 45.2% to 69.5%
 - Output package coverage increased to 98.9% with comprehensive formatter tests
 - Enhanced testing infrastructure with interface-based design patterns
+
+### Fixed
+- **Time format validation**: Added support for relative time formats (24h, 1d, 30m), absolute dates, and time-only formats
+- **Range validation**: Proper validation of count limits (1-5000), bucket limits (1-5000), and other numeric parameters
+- **Input sanitization**: Query syntax validation prevents excessively long queries and validates column specifications
 
 ## v0.3.0 - 2025-07-26
 

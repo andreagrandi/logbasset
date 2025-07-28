@@ -3,10 +3,11 @@ package cli
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/andreagrandi/logbasset/internal/client"
+	"github.com/andreagrandi/logbasset/internal/errors"
+	"github.com/andreagrandi/logbasset/internal/validation"
 	"github.com/spf13/cobra"
 )
 
@@ -35,9 +36,23 @@ func runTail(cmd *cobra.Command, args []string) {
 		filter = args[0]
 	}
 
+	// Validate inputs
+	validationConfig := validation.DefaultConfig()
+	params := validation.QueryValidationParams{
+		Output:        tailOutput,
+		Priority:      getConfig().Priority,
+		Query:         filter,
+		Lines:         tailLines,
+		ValidateLines: true,
+	}
+
+	if err := validation.ValidateQueryParams(params, validationConfig); err != nil {
+		errors.HandleErrorAndExit(err)
+	}
+
 	c := getConfig().GetClient()
 
-	params := client.TailParams{
+	clientParams := client.TailParams{
 		Filter:   filter,
 		Lines:    tailLines,
 		Priority: getConfig().Priority,
@@ -47,9 +62,8 @@ func runTail(cmd *cobra.Command, args []string) {
 	eventChan := make(chan client.LogEvent)
 
 	go func() {
-		if err := c.Tail(ctx, params, eventChan); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
+		if err := c.Tail(ctx, clientParams, eventChan); err != nil {
+			errors.HandleErrorAndExit(err)
 		}
 	}()
 

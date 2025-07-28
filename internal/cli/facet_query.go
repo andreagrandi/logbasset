@@ -3,11 +3,12 @@ package cli
 import (
 	"context"
 	"encoding/csv"
-	"fmt"
 	"os"
 	"strconv"
 
 	"github.com/andreagrandi/logbasset/internal/client"
+	"github.com/andreagrandi/logbasset/internal/errors"
+	"github.com/andreagrandi/logbasset/internal/validation"
 	"github.com/spf13/cobra"
 )
 
@@ -39,9 +40,30 @@ func runFacetQuery(cmd *cobra.Command, args []string) {
 	filter := args[0]
 	field := args[1]
 
+	// Validate inputs
+	validationConfig := validation.DefaultConfig()
+	params := validation.QueryValidationParams{
+		StartTime:     facetQueryStartTime,
+		EndTime:       facetQueryEndTime,
+		Count:         facetQueryCount,
+		Output:        facetQueryOutput,
+		Priority:      getConfig().Priority,
+		Query:         filter,
+		ValidateCount: true,
+	}
+
+	if err := validation.ValidateQueryParams(params, validationConfig); err != nil {
+		errors.HandleErrorAndExit(err)
+	}
+
+	// Validate required field
+	if err := validation.ValidateRequiredField("start", facetQueryStartTime); err != nil {
+		errors.HandleErrorAndExit(err)
+	}
+
 	c := getConfig().GetClient()
 
-	params := client.FacetQueryParams{
+	clientParams := client.FacetQueryParams{
 		Filter:    filter,
 		Field:     field,
 		StartTime: facetQueryStartTime,
@@ -51,10 +73,9 @@ func runFacetQuery(cmd *cobra.Command, args []string) {
 	}
 
 	ctx := context.Background()
-	result, err := c.FacetQuery(ctx, params)
+	result, err := c.FacetQuery(ctx, clientParams)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		errors.HandleErrorAndExit(err)
 	}
 
 	switch facetQueryOutput {

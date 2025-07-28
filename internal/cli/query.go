@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/andreagrandi/logbasset/internal/client"
+	"github.com/andreagrandi/logbasset/internal/errors"
+	"github.com/andreagrandi/logbasset/internal/validation"
 	"github.com/spf13/cobra"
 )
 
@@ -46,9 +48,27 @@ func runQuery(cmd *cobra.Command, args []string) {
 		filter = args[0]
 	}
 
+	// Validate inputs
+	validationConfig := validation.DefaultConfig()
+	params := validation.QueryValidationParams{
+		StartTime:     queryStartTime,
+		EndTime:       queryEndTime,
+		Count:         queryCount,
+		Mode:          queryMode,
+		Columns:       queryColumns,
+		Output:        queryOutput,
+		Priority:      getConfig().Priority,
+		Query:         filter,
+		ValidateCount: true,
+	}
+
+	if err := validation.ValidateQueryParams(params, validationConfig); err != nil {
+		errors.HandleErrorAndExit(err)
+	}
+
 	c := getConfig().GetClient()
 
-	params := client.QueryParams{
+	clientParams := client.QueryParams{
 		Filter:    filter,
 		StartTime: queryStartTime,
 		EndTime:   queryEndTime,
@@ -59,10 +79,9 @@ func runQuery(cmd *cobra.Command, args []string) {
 	}
 
 	ctx := context.Background()
-	result, err := c.Query(ctx, params)
+	result, err := c.Query(ctx, clientParams)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		errors.HandleErrorAndExit(err)
 	}
 
 	switch queryOutput {
@@ -79,7 +98,7 @@ func runQuery(cmd *cobra.Command, args []string) {
 	}
 }
 
-func outputJSON(data interface{}, pretty bool) {
+func outputJSON(data any, pretty bool) {
 	var output []byte
 	var err error
 
@@ -90,8 +109,7 @@ func outputJSON(data interface{}, pretty bool) {
 	}
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error marshaling JSON: %v\n", err)
-		os.Exit(1)
+		errors.HandleErrorAndExit(errors.NewParseError("failed to marshal JSON", err))
 	}
 
 	fmt.Println(string(output))
