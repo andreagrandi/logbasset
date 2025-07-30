@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## v0.4.2 - 2025-07-30
+
 ### Added
 - **Context propagation**: Complete implementation of context propagation throughout all CLI operations
 - **Timeout support**: Global `--timeout` flag to configure request timeouts for all commands (default: 30s)
