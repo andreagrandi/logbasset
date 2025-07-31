@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/andreagrandi/logbasset/internal/errors"
+	"github.com/andreagrandi/logbasset/internal/logging"
 )
 
 const (
@@ -72,8 +73,11 @@ func (c *Client) makeRequest(ctx context.Context, endpoint string, params map[st
 
 	url := fmt.Sprintf("%s/api/%s", c.server, endpoint)
 	if c.verbose {
-		fmt.Fprintf(os.Stderr, "Making request to: %s\n", url)
-		fmt.Fprintf(os.Stderr, "Request data: %s\n", string(jsonData))
+		logging.WithFields(map[string]any{
+			"url":      url,
+			"endpoint": endpoint,
+		}).Debug("Making HTTP request")
+		logging.WithField("request_data", string(jsonData)).Debug("Request payload")
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
