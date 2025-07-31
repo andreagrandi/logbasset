@@ -3,12 +3,11 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"github.com/andreagrandi/logbasset/internal/errors"
+	"github.com/andreagrandi/logbasset/internal/logging"
 )
 
 func (c *Client) Tail(ctx context.Context, params TailParams, outputChan chan<- LogEvent) error {
@@ -39,7 +38,7 @@ func (c *Client) Tail(ctx context.Context, params TailParams, outputChan chan<- 
 	}
 
 	if c.verbose {
-		fmt.Fprintf(os.Stderr, "Response: %s\n", string(body))
+		logging.WithField("response_body", string(body)).Debug("API response received")
 	}
 
 	var result QueryResponse

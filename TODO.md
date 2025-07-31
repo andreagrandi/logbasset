@@ -73,8 +73,8 @@ logbasset/
 - [ ] **Help improvements** - Better examples in help text and man page generation
 
 ### 10. Logging & Observability
-- [ ] **Structured logging** - Use a logging library (logrus/zap) instead of fmt.Fprintf to stderr
-- [ ] **Log levels** - Support different verbosity levels (debug, info, warn, error)
+- [x] **Structured logging** - Use a logging library (logrus/zap) instead of fmt.Fprintf to stderr
+- [x] **Log levels** - Support different verbosity levels (debug, info, warn, error)
 
 ### 11. Security Improvements
 - [ ] **Token masking** - Mask tokens in verbose output and logs

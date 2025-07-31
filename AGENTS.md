@@ -10,6 +10,7 @@ logbasset/
 │   ├── cli/                # CLI command implementations  
 │   ├── client/             # API client (split: client.go, basic_query.go, power_query.go, numeric_query.go, facet_query.go, timeseries_query.go, tail.go, types.go)
 │   ├── config/             # Configuration management
+│   ├── logging/            # Structured logging with logrus
 │   ├── output/             # Output formatting (JSON, CSV, table)
 │   └── errors/             # Centralized error handling
 ├── pkg/                    # Public APIs (if needed)
@@ -28,6 +29,13 @@ LogBasset now uses a structured configuration system with Viper:
 - Configuration files (YAML format)
 - Command-line flags
 - Default values
+
+### Logging Configuration
+LogBasset uses structured logging with logrus:
+- Log levels: debug, info, warn, error (default: info)
+- Configurable via `--log-level` flag, `scalyr_log_level` env var, or config file
+- Structured output with timestamps and contextual fields
+- Debug level shows API request/response details when verbose mode is enabled
 
 ### Configuration Locations
 - `./logbasset.yaml` (current directory)

@@ -3,11 +3,10 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
-	"os"
 
 	"github.com/andreagrandi/logbasset/internal/errors"
+	"github.com/andreagrandi/logbasset/internal/logging"
 )
 
 func (c *Client) TimeseriesQuery(ctx context.Context, params TimeseriesQueryParams) (*NumericQueryResponse, error) {
@@ -50,7 +49,7 @@ func (c *Client) TimeseriesQuery(ctx context.Context, params TimeseriesQueryPara
 	}
 
 	if c.verbose {
-		fmt.Fprintf(os.Stderr, "Response: %s\n", string(body))
+		logging.WithField("response_body", string(body)).Debug("API response received")
 	}
 
 	var result NumericQueryResponse
