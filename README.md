@@ -317,7 +317,7 @@ logbasset tail '$source="myapp"' --output=singleline
 ## Building
 
 Requirements:
-- Go 1.24 or later
+- Go 1.25 or later
 - Make (optional, but recommended)
 
 ### Using Make (recommended)
