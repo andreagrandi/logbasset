@@ -1,5 +1,6 @@
 ---
 description: Create a new release for this application, bumping the version and updating the changelog
+mode: subagent
 ---
 
 When asked to create a new release, you need to:
