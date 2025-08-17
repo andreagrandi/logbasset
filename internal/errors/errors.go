@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+
+	"github.com/andreagrandi/logbasset/internal/logging"
 )
 
 type ErrorType string
@@ -164,10 +166,13 @@ func HandleErrorAndExit(err error) {
 	}
 
 	if logbassetErr, ok := err.(*LogBassetError); ok {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", logbassetErr.Error())
+		logging.WithFields(map[string]any{
+			"error_type": string(logbassetErr.Type),
+			"exit_code":  logbassetErr.GetExitCode(),
+		}).Error(logbassetErr.Error())
 		os.Exit(logbassetErr.GetExitCode())
 	}
 
-	fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+	logging.Error(err.Error())
 	os.Exit(ExitGeneral)
 }

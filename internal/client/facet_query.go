@@ -3,11 +3,10 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
-	"os"
 
 	"github.com/andreagrandi/logbasset/internal/errors"
+	"github.com/andreagrandi/logbasset/internal/logging"
 )
 
 func (c *Client) FacetQuery(ctx context.Context, params FacetQueryParams) (*FacetQueryResponse, error) {
@@ -42,7 +41,7 @@ func (c *Client) FacetQuery(ctx context.Context, params FacetQueryParams) (*Face
 	}
 
 	if c.verbose {
-		fmt.Fprintf(os.Stderr, "Response: %s\n", string(body))
+		logging.WithField("response_body", string(body)).Debug("API response received")
 	}
 
 	var result FacetQueryResponse

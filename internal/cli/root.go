@@ -14,6 +14,7 @@ var (
 	flagServer   string
 	flagVerbose  bool
 	flagPriority string
+	flagLogLevel string
 	flagTimeout  time.Duration
 )
 
@@ -37,7 +38,11 @@ The following commands are currently supported:
 			return err
 		}
 
-		cfg.SetFromFlags(flagToken, flagServer, flagVerbose, flagPriority)
+		cfg.SetFromFlags(flagToken, flagServer, flagVerbose, flagPriority, flagLogLevel)
+
+		if err := cfg.ApplyLogging(); err != nil {
+			return err
+		}
 
 		return cfg.Validate()
 	},
@@ -48,6 +53,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&flagServer, "server", "", "Scalyr server URL (can also use scalyr_server env var)")
 	rootCmd.PersistentFlags().BoolVar(&flagVerbose, "verbose", false, "Enable verbose output")
 	rootCmd.PersistentFlags().StringVar(&flagPriority, "priority", "high", "Query priority (high|low)")
+	rootCmd.PersistentFlags().StringVar(&flagLogLevel, "log-level", "info", "Log level (debug|info|warn|error)")
 	rootCmd.PersistentFlags().DurationVar(&flagTimeout, "timeout", 30*time.Second, "Request timeout (e.g., 30s, 2m, 1h)")
 
 	rootCmd.AddCommand(queryCmd)

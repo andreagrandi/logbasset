@@ -116,6 +116,26 @@ func TestValidateConfig(t *testing.T) {
 			},
 			expectError: true,
 		},
+		{
+			name: "invalid log level",
+			config: &Config{
+				Token:    "test-token",
+				Server:   "https://www.scalyr.com",
+				Priority: "high",
+				LogLevel: "invalid",
+			},
+			expectError: true,
+		},
+		{
+			name: "valid log level",
+			config: &Config{
+				Token:    "test-token",
+				Server:   "https://www.scalyr.com",
+				Priority: "high",
+				LogLevel: "debug",
+			},
+			expectError: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -138,12 +158,13 @@ func TestSetFromFlags(t *testing.T) {
 		Priority: "high",
 	}
 
-	config.SetFromFlags("new-token", "https://eu.scalyr.com", true, "low")
+	config.SetFromFlags("new-token", "https://eu.scalyr.com", true, "low", "debug")
 
 	assert.Equal(t, "new-token", config.Token)
 	assert.Equal(t, "https://eu.scalyr.com", config.Server)
 	assert.True(t, config.Verbose)
 	assert.Equal(t, "low", config.Priority)
+	assert.Equal(t, "debug", config.LogLevel)
 }
 
 func clearEnv() {

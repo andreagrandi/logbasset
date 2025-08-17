@@ -75,6 +75,7 @@ token: your-api-token-here
 server: https://eu.scalyr.com
 verbose: false
 priority: high
+log_level: info
 ```
 
 ### Command Line Flags
@@ -252,6 +253,7 @@ These options are available for all commands:
 - `--server=xxx`: Specify the Scalyr server URL
 - `--verbose`: Enable verbose output for debugging
 - `--priority=high|low`: Query execution priority (defaults to high)
+- `--log-level=debug|info|warn|error`: Set logging level (defaults to info)
 
 ## Output Formats
 

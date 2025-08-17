@@ -3,11 +3,10 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
-	"os"
 
 	"github.com/andreagrandi/logbasset/internal/errors"
+	"github.com/andreagrandi/logbasset/internal/logging"
 )
 
 func (c *Client) NumericQuery(ctx context.Context, params NumericQueryParams) (*NumericQueryResponse, error) {
@@ -44,7 +43,7 @@ func (c *Client) NumericQuery(ctx context.Context, params NumericQueryParams) (*
 	}
 
 	if c.verbose {
-		fmt.Fprintf(os.Stderr, "Response: %s\n", string(body))
+		logging.WithField("response_body", string(body)).Debug("API response received")
 	}
 
 	var result NumericQueryResponse
