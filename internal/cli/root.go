@@ -32,6 +32,13 @@ The following commands are currently supported:
 - tail: Provide a live 'tail' of a log`,
 	Version: app.Version,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		// Skip authentication for commands that don't need API access
+		// Check both the command itself and its parent (for completion subcommands like "bash", "zsh", etc.)
+		if cmd.Name() == "completion" || cmd.Name() == "help" ||
+			(cmd.Parent() != nil && cmd.Parent().Name() == "completion") {
+			return nil
+		}
+
 		var err error
 		cfg, err = config.New()
 		if err != nil {
