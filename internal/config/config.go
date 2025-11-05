@@ -20,7 +20,7 @@ type Config struct {
 	LogLevel string `mapstructure:"log_level"`
 }
 
-func New() (*Config, error) {
+func NewWithoutValidation() (*Config, error) {
 	v := viper.New()
 
 	setDefaults(v)
@@ -32,6 +32,15 @@ func New() (*Config, error) {
 	config := &Config{}
 	if err := v.Unmarshal(config); err != nil {
 		return nil, errors.NewConfigError("failed to unmarshal configuration", err)
+	}
+
+	return config, nil
+}
+
+func New() (*Config, error) {
+	config, err := NewWithoutValidation()
+	if err != nil {
+		return nil, err
 	}
 
 	if err := validateConfig(config); err != nil {

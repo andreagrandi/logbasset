@@ -40,7 +40,7 @@ The following commands are currently supported:
 		}
 
 		var err error
-		cfg, err = config.New()
+		cfg, err = config.NewWithoutValidation()
 		if err != nil {
 			return err
 		}
