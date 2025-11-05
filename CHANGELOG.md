@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- **CLI flag parsing**: Fixed `--token` flag not being applied before validation, causing authentication errors even when token was provided via command line
+
 ## v0.4.3 - 2025-11-05
 
 ### Fixed
