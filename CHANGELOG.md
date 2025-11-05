@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## v0.4.3 - 2025-11-05
+
 ### Fixed
 - **Completion command authentication**: Removed authentication requirement for `completion` command and its subcommands (bash, zsh, fish, powershell)
 
