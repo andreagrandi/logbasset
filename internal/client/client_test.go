@@ -464,12 +464,13 @@ func TestTail_PaginationParameters(t *testing.T) {
 				"continuationToken": "token-123"
 			}`))
 		} else {
-			// Second request should have continuationToken and NO pageMode or filter
+			// Second request should repeat pageMode and filter along with continuationToken
+			// per Scalyr API docs: "Make sure you repeat the same filter, startTime, endTime, and pageMode"
 			assert.Equal(t, "log", reqData["queryType"])
 			assert.Equal(t, "token-123", reqData["continuationToken"])
+			assert.Equal(t, "tail", reqData["pageMode"], "pageMode should be repeated with continuationToken")
+			assert.Equal(t, "test filter", reqData["filter"], "filter should be repeated with continuationToken")
 			assert.Equal(t, "high", reqData["priority"])
-			assert.NotContains(t, reqData, "pageMode", "pageMode should not be present with continuationToken")
-			assert.NotContains(t, reqData, "filter", "filter should not be present with continuationToken")
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
