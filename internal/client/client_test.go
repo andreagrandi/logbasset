@@ -437,6 +437,78 @@ func TestClient_Tail(t *testing.T) {
 	assert.Equal(t, context.Canceled, err)
 }
 
+func TestTail_PaginationParameters(t *testing.T) {
+	requestCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "POST", r.Method)
+		assert.Equal(t, "/api/query", r.URL.Path)
+
+		body, _ := io.ReadAll(r.Body)
+		var reqData map[string]interface{}
+		json.Unmarshal(body, &reqData)
+
+		requestCount++
+		if requestCount == 1 {
+			// First request should have pageMode and NO continuationToken
+			assert.Equal(t, "log", reqData["queryType"])
+			assert.Equal(t, "tail", reqData["pageMode"])
+			assert.Equal(t, "test filter", reqData["filter"])
+			assert.Equal(t, "high", reqData["priority"])
+			assert.NotContains(t, reqData, "continuationToken")
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{
+				"status": "success",
+				"matches": [{"timestamp": "2023-01-01T00:00:00Z", "severity": 3, "message": "First"}],
+				"continuationToken": "token-123"
+			}`))
+		} else {
+			// Second request should have continuationToken and NO pageMode or filter
+			assert.Equal(t, "log", reqData["queryType"])
+			assert.Equal(t, "token-123", reqData["continuationToken"])
+			assert.Equal(t, "high", reqData["priority"])
+			assert.NotContains(t, reqData, "pageMode", "pageMode should not be present with continuationToken")
+			assert.NotContains(t, reqData, "filter", "filter should not be present with continuationToken")
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{
+				"status": "success",
+				"matches": [{"timestamp": "2023-01-01T00:00:01Z", "severity": 3, "message": "Second"}],
+				"continuationToken": "token-456"
+			}`))
+		}
+	}))
+	defer server.Close()
+
+	client := New("test-token", server.URL, false)
+
+	params := TailParams{
+		Filter:   "test filter",
+		Lines:    100,
+		Priority: "high",
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	outputChan := make(chan LogEvent, 10)
+
+	eventsReceived := 0
+	go func() {
+		for range outputChan {
+			eventsReceived++
+			if eventsReceived == 2 {
+				cancel()
+			}
+		}
+	}()
+
+	err := client.Tail(ctx, params, outputChan)
+	assert.Error(t, err)
+	assert.Equal(t, context.Canceled, err)
+	assert.Equal(t, 2, requestCount, "Should have made exactly 2 requests")
+}
+
 func TestClientInterface_Implementation(t *testing.T) {
 	// Verify that Client implements ClientInterface
 	var _ ClientInterface = (*Client)(nil)
