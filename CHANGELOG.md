@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## v0.4.6 - 2025-11-24
+
+### Fixed
+- **Pagination with continuationToken**: Fixed "DuplicateEliminationFailed" error by following Scalyr API docs to repeat pageMode and filter parameters with continuationToken
+
 ## v0.4.5 - 2025-11-24
 
 ### Fixed
