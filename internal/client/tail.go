@@ -59,15 +59,21 @@ func (c *Client) Tail(ctx context.Context, params TailParams, outputChan chan<- 
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-time.After(2 * time.Second):
-			// Create new params map for continuation - don't reuse original
-			// to avoid sending conflicting parameters like pageMode with continuationToken
+			// According to Scalyr docs: repeat the same filter, pageMode, startTime, endTime
+			// when using continuationToken
 			continuationParams := map[string]interface{}{
 				"queryType":         "log",
+				"pageMode":          "tail",
 				"continuationToken": result.ContinuationToken,
 				"maxCount":          1000,
 			}
 
-			// Only include priority if it was specified
+			// Repeat filter if it was specified in original request
+			if params.Filter != "" {
+				continuationParams["filter"] = params.Filter
+			}
+
+			// Include priority if it was specified
 			if params.Priority != "" {
 				continuationParams["priority"] = params.Priority
 			}
