@@ -59,10 +59,20 @@ func (c *Client) Tail(ctx context.Context, params TailParams, outputChan chan<- 
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-time.After(2 * time.Second):
-			requestParams["continuationToken"] = result.ContinuationToken
-			requestParams["maxCount"] = 1000
+			// Create new params map for continuation - don't reuse original
+			// to avoid sending conflicting parameters like pageMode with continuationToken
+			continuationParams := map[string]interface{}{
+				"queryType":         "log",
+				"continuationToken": result.ContinuationToken,
+				"maxCount":          1000,
+			}
 
-			resp, err := c.makeRequest(ctx, "query", requestParams)
+			// Only include priority if it was specified
+			if params.Priority != "" {
+				continuationParams["priority"] = params.Priority
+			}
+
+			resp, err := c.makeRequest(ctx, "query", continuationParams)
 			if err != nil {
 				return err
 			}

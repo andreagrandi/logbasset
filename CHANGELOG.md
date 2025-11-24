@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- **Pagination with continuationToken**: Fixed "DuplicateEliminationFailed" error when using continuationToken in tail command by creating clean parameter maps that exclude conflicting parameters like pageMode and filter
+
 ## v0.4.4 - 2025-11-05
 
 ### Fixed
