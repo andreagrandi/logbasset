@@ -67,11 +67,19 @@ type QueryResponse struct {
 	ContinuationToken string     `json:"continuationToken,omitempty"`
 }
 
+type PowerQueryColumn struct {
+	Name string `json:"name"`
+}
+
 type PowerQueryResponse struct {
-	Status  string                   `json:"status"`
-	Message string                   `json:"message,omitempty"`
-	Results []map[string]interface{} `json:"results"`
-	Columns []string                 `json:"columns"`
+	Status         string                   `json:"status"`
+	Message        string                   `json:"message,omitempty"`
+	MatchingEvents float64                  `json:"matchingEvents,omitempty"`
+	OmittedEvents  float64                  `json:"omittedEvents,omitempty"`
+	Columns        []PowerQueryColumn       `json:"columns"`
+	Values         [][]interface{}          `json:"values"`
+	Warnings       []string                 `json:"warnings,omitempty"`
+	Results        []map[string]interface{} `json:"results,omitempty"` // Keep for backward compatibility
 }
 
 type NumericQueryResponse struct {
@@ -89,4 +97,14 @@ type FacetQueryResponse struct {
 	Status  string       `json:"status"`
 	Message string       `json:"message,omitempty"`
 	Values  []FacetValue `json:"values"`
+}
+
+type TimeseriesResult struct {
+	Values []float64 `json:"values"`
+}
+
+type TimeseriesQueryResponse struct {
+	Status  string             `json:"status"`
+	Message string             `json:"message,omitempty"`
+	Results []TimeseriesResult `json:"results"`
 }

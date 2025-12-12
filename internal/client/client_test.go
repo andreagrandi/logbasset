@@ -319,15 +319,21 @@ func TestClient_PowerQuery(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, "/api/powerQuery", r.URL.Path)
 
+		// Verify request body contains correct queryType
+		body, _ := io.ReadAll(r.Body)
+		var reqData map[string]interface{}
+		json.Unmarshal(body, &reqData)
+		assert.Equal(t, "complex", reqData["queryType"])
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{
 			"status": "success",
-			"columns": ["path", "count"],
-			"results": [
-				{"path": "/index.html", "count": 100},
-				{"path": "/about.html", "count": 50}
-			]
+			"matchingEvents": 150,
+			"omittedEvents": 0,
+			"columns": [{"name": "path"}, {"name": "count"}],
+			"values": [["/index.html", 100], ["/about.html", 50]],
+			"warnings": []
 		}`))
 	}))
 	defer server.Close()
@@ -344,8 +350,10 @@ func TestClient_PowerQuery(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "success", result.Status)
-	assert.Equal(t, []string{"path", "count"}, result.Columns)
-	assert.Len(t, result.Results, 2)
+	assert.Len(t, result.Columns, 2)
+	assert.Equal(t, "path", result.Columns[0].Name)
+	assert.Equal(t, "count", result.Columns[1].Name)
+	assert.Len(t, result.Values, 2)
 }
 
 func TestClient_TimeseriesQuery(t *testing.T) {
@@ -353,18 +361,25 @@ func TestClient_TimeseriesQuery(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, "/api/timeseriesQuery", r.URL.Path)
 
-		// Verify request body contains expected parameters
+		// Verify request body contains queries array per Scalyr API spec
 		body, _ := io.ReadAll(r.Body)
 		var reqData map[string]interface{}
 		json.Unmarshal(body, &reqData)
-		assert.Equal(t, "numeric", reqData["queryType"])
-		assert.Equal(t, true, reqData["onlyUseSummaries"])
+
+		// Verify queries array exists and contains the query
+		queries, ok := reqData["queries"].([]interface{})
+		assert.True(t, ok, "queries should be an array")
+		assert.Len(t, queries, 1, "queries should contain one query")
+
+		query := queries[0].(map[string]interface{})
+		assert.Equal(t, "numeric", query["queryType"])
+		assert.Equal(t, true, query["onlyUseSummaries"])
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{
 			"status": "success",
-			"values": [1.0, 2.0, 3.0]
+			"results": [{"values": [1.0, 2.0, 3.0]}]
 		}`))
 	}))
 	defer server.Close()
@@ -384,7 +399,8 @@ func TestClient_TimeseriesQuery(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "success", result.Status)
-	assert.Equal(t, []float64{1.0, 2.0, 3.0}, result.Values)
+	assert.Len(t, result.Results, 1)
+	assert.Equal(t, []float64{1.0, 2.0, 3.0}, result.Results[0].Values)
 }
 
 func TestClient_Tail(t *testing.T) {

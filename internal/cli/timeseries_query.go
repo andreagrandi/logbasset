@@ -101,12 +101,18 @@ func runTimeseriesQuery(cmd *cobra.Command, args []string) {
 		errors.HandleErrorAndExit(err)
 	}
 
+	// Extract values from first result in the results array
+	var values []float64
+	if len(result.Results) > 0 {
+		values = result.Results[0].Values
+	}
+
 	switch timeseriesQueryOutput {
 	case "json":
 		outputJSON(result, false)
 	case "json-pretty":
 		outputJSON(result, true)
 	default:
-		outputNumericCSV(result.Values)
+		outputNumericCSV(values)
 	}
 }

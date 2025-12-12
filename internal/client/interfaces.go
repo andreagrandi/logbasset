@@ -16,7 +16,7 @@ type ClientInterface interface {
 	PowerQuery(ctx context.Context, params PowerQueryParams) (*PowerQueryResponse, error)
 	NumericQuery(ctx context.Context, params NumericQueryParams) (*NumericQueryResponse, error)
 	FacetQuery(ctx context.Context, params FacetQueryParams) (*FacetQueryResponse, error)
-	TimeseriesQuery(ctx context.Context, params TimeseriesQueryParams) (*NumericQueryResponse, error)
+	TimeseriesQuery(ctx context.Context, params TimeseriesQueryParams) (*TimeseriesQueryResponse, error)
 	Tail(ctx context.Context, params TailParams, outputChan chan<- LogEvent) error
 	SetToken(token string)
 }

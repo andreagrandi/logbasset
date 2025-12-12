@@ -9,32 +9,39 @@ import (
 	"github.com/andreagrandi/logbasset/internal/logging"
 )
 
-func (c *Client) TimeseriesQuery(ctx context.Context, params TimeseriesQueryParams) (*NumericQueryResponse, error) {
-	requestParams := map[string]interface{}{
+func (c *Client) TimeseriesQuery(ctx context.Context, params TimeseriesQueryParams) (*TimeseriesQueryResponse, error) {
+	// Build the inner query object per Scalyr API spec
+	query := map[string]interface{}{
 		"queryType": "numeric",
 		"startTime": params.StartTime,
 	}
 
 	if params.Filter != "" {
-		requestParams["filter"] = params.Filter
+		query["filter"] = params.Filter
 	}
 	if params.Function != "" {
-		requestParams["function"] = params.Function
+		query["function"] = params.Function
 	}
 	if params.EndTime != "" {
-		requestParams["endTime"] = params.EndTime
+		query["endTime"] = params.EndTime
 	}
 	if params.Buckets > 0 {
-		requestParams["buckets"] = params.Buckets
+		query["buckets"] = params.Buckets
 	}
 	if params.Priority != "" {
-		requestParams["priority"] = params.Priority
+		query["priority"] = params.Priority
 	}
 	if params.OnlyUseSummaries {
-		requestParams["onlyUseSummaries"] = true
+		query["onlyUseSummaries"] = true
 	}
+	// createSummaries is the inverse of NoCreateSummaries
 	if params.NoCreateSummaries {
-		requestParams["noCreateSummaries"] = true
+		query["createSummaries"] = false
+	}
+
+	// Wrap query in queries array per Scalyr API spec
+	requestParams := map[string]interface{}{
+		"queries": []map[string]interface{}{query},
 	}
 
 	resp, err := c.makeRequest(ctx, "timeseriesQuery", requestParams)
@@ -52,7 +59,7 @@ func (c *Client) TimeseriesQuery(ctx context.Context, params TimeseriesQueryPara
 		logging.WithField("response_body", string(body)).Debug("API response received")
 	}
 
-	var result NumericQueryResponse
+	var result TimeseriesQueryResponse
 	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, errors.NewParseError("failed to parse response", err)
 	}
