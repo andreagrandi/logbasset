@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## v0.4.7 - 2025-12-12
+
 ### Fixed
 - **power-query API**: Fixed queryType parameter from "powerQuery" to "complex" per Scalyr API spec
 - **timeseries-query API**: Fixed request structure to wrap query in "queries" array per Scalyr API spec
