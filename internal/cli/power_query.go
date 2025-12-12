@@ -99,16 +99,20 @@ func outputPowerQueryCSV(result *client.PowerQueryResponse) {
 	writer := csv.NewWriter(os.Stdout)
 	defer writer.Flush()
 
+	// Extract column names from column objects
 	if len(result.Columns) > 0 {
-		writer.Write(result.Columns)
+		columnNames := make([]string, len(result.Columns))
+		for i, col := range result.Columns {
+			columnNames[i] = col.Name
+		}
+		writer.Write(columnNames)
 	}
 
-	for _, row := range result.Results {
-		record := make([]string, len(result.Columns))
-		for i, col := range result.Columns {
-			if val, ok := row[col]; ok {
-				record[i] = fmt.Sprintf("%v", val)
-			}
+	// Output values (array of arrays)
+	for _, row := range result.Values {
+		record := make([]string, len(row))
+		for i, val := range row {
+			record[i] = fmt.Sprintf("%v", val)
 		}
 		writer.Write(record)
 	}

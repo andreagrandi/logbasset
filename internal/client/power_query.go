@@ -11,7 +11,7 @@ import (
 
 func (c *Client) PowerQuery(ctx context.Context, params PowerQueryParams) (*PowerQueryResponse, error) {
 	requestParams := map[string]interface{}{
-		"queryType": "powerQuery",
+		"queryType": "complex",
 		"query":     params.Query,
 		"startTime": params.StartTime,
 	}
