@@ -12,6 +12,7 @@ import (
 
 	"github.com/andreagrandi/logbasset/internal/client"
 	"github.com/andreagrandi/logbasset/internal/errors"
+	"github.com/andreagrandi/logbasset/internal/logging"
 	"github.com/andreagrandi/logbasset/internal/validation"
 	"github.com/spf13/cobra"
 )
@@ -33,6 +34,7 @@ var (
 	queryMode      string
 	queryColumns   string
 	queryOutput    string
+	queryFields    string
 )
 
 func init() {
@@ -42,6 +44,7 @@ func init() {
 	queryCmd.Flags().StringVar(&queryMode, "mode", "", "Display mode: head or tail")
 	queryCmd.Flags().StringVar(&queryColumns, "columns", "", "Comma-separated list of columns to display")
 	queryCmd.Flags().StringVar(&queryOutput, "output", "multiline", "Output format: multiline|singleline|csv|json|json-pretty")
+	queryCmd.Flags().StringVar(&queryFields, "fields", "", "Comma-separated fields to include in JSON output (e.g., timestamp,message,severity)")
 }
 
 func runQuery(cmd *cobra.Command, args []string) {
@@ -66,6 +69,12 @@ func runQuery(cmd *cobra.Command, args []string) {
 
 	if err := validation.ValidateQueryParams(params, validationConfig); err != nil {
 		errors.HandleErrorAndExit(err)
+	}
+
+	if queryFields != "" {
+		if err := validation.ValidateFields(queryFields); err != nil {
+			errors.HandleErrorAndExit(err)
+		}
 	}
 
 	c := getConfig().GetClient()
@@ -98,18 +107,81 @@ func runQuery(cmd *cobra.Command, args []string) {
 		errors.HandleErrorAndExit(err)
 	}
 
+	if !cmd.Flags().Changed("output") && !IsTTY() {
+		queryOutput = "json"
+		errors.OutputJSON = true
+	}
+
 	switch queryOutput {
 	case "json":
-		outputJSON(result, false)
+		if queryFields != "" {
+			outputFilteredJSON(result.Matches, queryFields, false)
+		} else {
+			outputJSON(result, false)
+		}
 	case "json-pretty":
-		outputJSON(result, true)
+		if queryFields != "" {
+			outputFilteredJSON(result.Matches, queryFields, true)
+		} else {
+			outputJSON(result, true)
+		}
 	case "csv":
+		if queryFields != "" {
+			logging.Warn("--fields is only supported with json/json-pretty output, ignoring")
+		}
 		outputCSV(result.Matches, queryColumns)
 	case "singleline":
+		if queryFields != "" {
+			logging.Warn("--fields is only supported with json/json-pretty output, ignoring")
+		}
 		outputSingleLine(result.Matches)
 	default:
+		if queryFields != "" {
+			logging.Warn("--fields is only supported with json/json-pretty output, ignoring")
+		}
 		outputMultiLine(result.Matches)
 	}
+}
+
+func outputFilteredJSON(events []client.LogEvent, fields string, pretty bool) {
+	fieldList := strings.Split(fields, ",")
+	for i, f := range fieldList {
+		fieldList[i] = strings.TrimSpace(f)
+	}
+
+	fieldSet := make(map[string]bool, len(fieldList))
+	for _, f := range fieldList {
+		fieldSet[f] = true
+	}
+
+	var filtered []map[string]interface{}
+	for _, event := range events {
+		m := make(map[string]interface{})
+		if fieldSet["timestamp"] {
+			m["timestamp"] = event.Timestamp
+		}
+		if fieldSet["severity"] {
+			m["severity"] = event.Severity
+		}
+		if fieldSet["message"] {
+			m["message"] = event.Message
+		}
+		if fieldSet["thread"] {
+			m["thread"] = event.Thread
+		}
+		// Check attribute keys
+		for _, f := range fieldList {
+			if f == "timestamp" || f == "severity" || f == "message" || f == "thread" {
+				continue
+			}
+			if val, ok := event.Attributes[f]; ok {
+				m[f] = val
+			}
+		}
+		filtered = append(filtered, m)
+	}
+
+	outputJSON(filtered, pretty)
 }
 
 func outputJSON(data any, pretty bool) {

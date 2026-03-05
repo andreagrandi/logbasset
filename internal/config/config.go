@@ -88,12 +88,25 @@ func validateConfig(config *Config) error {
 	}
 
 	if config.Server != "" {
-		if _, err := url.Parse(config.Server); err != nil {
+		parsedURL, err := url.Parse(config.Server)
+		if err != nil {
 			return errors.NewConfigError("invalid server URL", err)
 		}
 
 		if !strings.HasPrefix(config.Server, "http://") && !strings.HasPrefix(config.Server, "https://") {
 			return errors.NewConfigError("server URL must start with http:// or https://", nil)
+		}
+
+		if parsedURL.User != nil {
+			return errors.NewConfigError("server URL must not contain embedded credentials", nil)
+		}
+
+		if parsedURL.RawQuery != "" {
+			return errors.NewConfigError("server URL must not contain query parameters", nil)
+		}
+
+		if parsedURL.Fragment != "" {
+			return errors.NewConfigError("server URL must not contain a fragment", nil)
 		}
 	}
 
