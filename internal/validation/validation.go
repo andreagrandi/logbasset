@@ -190,6 +190,7 @@ func ValidateMode(mode string, validModes []string) error {
 		fmt.Errorf("valid modes: %s", strings.Join(validModes, ", ")),
 	)
 }
+
 // ValidateNoControlChars rejects ASCII control characters (0x00-0x1F except tab/newline/CR, and 0x7F).
 func ValidateNoControlChars(input string, fieldName string) error {
 	for i, r := range input {

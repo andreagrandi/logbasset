@@ -155,12 +155,12 @@ func TestLogBassetError_NilCause(t *testing.T) {
 
 func TestLogBassetError_ToJSON(t *testing.T) {
 	tests := []struct {
-		name         string
-		err          *LogBassetError
-		expectType   string
-		expectMsg    string
-		expectSugg   string
-		expectCode   int
+		name       string
+		err        *LogBassetError
+		expectType string
+		expectMsg  string
+		expectSugg string
+		expectCode int
 	}{
 		{
 			name:       "auth error",
