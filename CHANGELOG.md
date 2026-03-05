@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## v0.4.8 - 2026-03-05
+
+### Changed
+- Bumped `github.com/sirupsen/logrus` from 1.9.3 to 1.9.4
+- Bumped GitHub Actions: `actions/checkout` v5→v6, `actions/cache` v4→v5, `actions/upload-artifact` v5→v6
+- Added agent-friendly project documentation (CLAUDE.md)
+
 ## v0.4.7 - 2025-12-12
 
 ### Fixed
