@@ -179,6 +179,37 @@ func TestValidateMode(t *testing.T) {
 	}
 }
 
+func TestValidateNoControlChars(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		wantError bool
+	}{
+		{"empty string", "", false},
+		{"normal text", "hello world", false},
+		{"tab allowed", "hello\tworld", false},
+		{"newline allowed", "hello\nworld", false},
+		{"CR allowed", "hello\rworld", false},
+		{"null byte", "hello\x00world", true},
+		{"bell char", "hello\x07world", true},
+		{"escape char", "hello\x1bworld", true},
+		{"DEL char", "hello\x7fworld", true},
+		{"form feed", "hello\x0cworld", true},
+		{"backspace", "hello\x08world", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateNoControlChars(tt.input, "test")
+			if tt.wantError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestValidateColumns(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -191,11 +222,43 @@ func TestValidateColumns(t *testing.T) {
 		{"columns with spaces", "timestamp, severity, message", false},
 		{"empty column in list", "timestamp,,message", true},
 		{"only spaces in column", "timestamp,   ,message", true},
+		{"path traversal in column", "../../etc/passwd", true},
+		{"backslash traversal", "..\\windows\\system32", true},
+		{"absolute path column", "/etc/passwd", true},
+		{"control char in column", "time\x00stamp", true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateColumns(tt.columns)
+			if tt.wantError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestValidateFields(t *testing.T) {
+	tests := []struct {
+		name      string
+		fields    string
+		wantError bool
+	}{
+		{"empty fields", "", false},
+		{"single field", "timestamp", false},
+		{"multiple fields", "timestamp,message,severity", false},
+		{"fields with spaces", "timestamp, message, severity", false},
+		{"empty field in list", "timestamp,,message", true},
+		{"path traversal", "../../etc/passwd", true},
+		{"absolute path", "/etc/passwd", true},
+		{"control char", "time\x00stamp", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateFields(tt.fields)
 			if tt.wantError {
 				assert.Error(t, err)
 			} else {

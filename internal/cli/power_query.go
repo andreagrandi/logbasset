@@ -85,6 +85,11 @@ func runPowerQuery(cmd *cobra.Command, args []string) {
 		errors.HandleErrorAndExit(err)
 	}
 
+	if !cmd.Flags().Changed("output") && !IsTTY() {
+		powerQueryOutput = "json"
+		errors.OutputJSON = true
+	}
+
 	switch powerQueryOutput {
 	case "json":
 		outputJSON(result, false)

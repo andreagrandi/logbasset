@@ -5,17 +5,19 @@ import (
 
 	"github.com/andreagrandi/logbasset/internal/app"
 	"github.com/andreagrandi/logbasset/internal/config"
+	"github.com/andreagrandi/logbasset/internal/errors"
 	"github.com/spf13/cobra"
 )
 
 var (
-	cfg          *config.Config
-	flagToken    string
-	flagServer   string
-	flagVerbose  bool
-	flagPriority string
-	flagLogLevel string
-	flagTimeout  time.Duration
+	cfg             *config.Config
+	flagToken       string
+	flagServer      string
+	flagVerbose     bool
+	flagPriority    string
+	flagLogLevel    string
+	flagTimeout     time.Duration
+	flagErrorFormat string
 )
 
 var rootCmd = &cobra.Command{
@@ -32,9 +34,17 @@ The following commands are currently supported:
 - tail: Provide a live 'tail' of a log`,
 	Version: app.Version,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		// Apply error format before anything else so errors during init are formatted correctly
+		if flagErrorFormat == "json" {
+			errors.OutputJSON = true
+			cmd.Root().SilenceErrors = true
+			cmd.Root().SilenceUsage = true
+		}
+
 		// Skip authentication for commands that don't need API access
 		// Check both the command itself and its parent (for completion subcommands like "bash", "zsh", etc.)
 		if cmd.Name() == "completion" || cmd.Name() == "help" ||
+			cmd.Name() == "context" || cmd.Name() == "schema" ||
 			(cmd.Parent() != nil && cmd.Parent().Name() == "completion") {
 			return nil
 		}
@@ -62,6 +72,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&flagPriority, "priority", "high", "Query priority (high|low)")
 	rootCmd.PersistentFlags().StringVar(&flagLogLevel, "log-level", "info", "Log level (debug|info|warn|error)")
 	rootCmd.PersistentFlags().DurationVar(&flagTimeout, "timeout", 30*time.Second, "Request timeout (e.g., 30s, 2m, 1h)")
+	rootCmd.PersistentFlags().StringVar(&flagErrorFormat, "error-format", "text", "Error output format: text|json")
 
 	rootCmd.AddCommand(queryCmd)
 	rootCmd.AddCommand(powerQueryCmd)
@@ -69,6 +80,8 @@ func init() {
 	rootCmd.AddCommand(facetQueryCmd)
 	rootCmd.AddCommand(timeseriesQueryCmd)
 	rootCmd.AddCommand(tailCmd)
+	rootCmd.AddCommand(contextCmd)
+	rootCmd.AddCommand(schemaCmd)
 }
 
 func Execute() error {

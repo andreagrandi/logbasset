@@ -2,11 +2,15 @@ package errors
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/andreagrandi/logbasset/internal/logging"
 )
+
+// OutputJSON controls whether errors are emitted as JSON on stderr.
+var OutputJSON bool
 
 type ErrorType string
 
@@ -52,6 +56,31 @@ func (e *LogBassetError) Error() string {
 
 func (e *LogBassetError) Unwrap() error {
 	return e.Cause
+}
+
+type jsonErrorPayload struct {
+	Error jsonErrorDetail `json:"error"`
+}
+
+type jsonErrorDetail struct {
+	Type       string `json:"type"`
+	Message    string `json:"message"`
+	Suggestion string `json:"suggestion,omitempty"`
+	ExitCode   int    `json:"exit_code"`
+}
+
+// ToJSON returns the error as a JSON byte slice for machine consumption.
+func (e *LogBassetError) ToJSON() []byte {
+	payload := jsonErrorPayload{
+		Error: jsonErrorDetail{
+			Type:       string(e.Type),
+			Message:    e.Message,
+			Suggestion: e.Suggestion,
+			ExitCode:   e.GetExitCode(),
+		},
+	}
+	data, _ := json.Marshal(payload)
+	return data
 }
 
 func (e *LogBassetError) GetExitCode() int {
@@ -166,13 +195,26 @@ func HandleErrorAndExit(err error) {
 	}
 
 	if logbassetErr, ok := err.(*LogBassetError); ok {
-		logging.WithFields(map[string]any{
-			"error_type": string(logbassetErr.Type),
-			"exit_code":  logbassetErr.GetExitCode(),
-		}).Error(logbassetErr.Error())
+		if OutputJSON {
+			fmt.Fprintln(os.Stderr, string(logbassetErr.ToJSON()))
+		} else {
+			logging.WithFields(map[string]any{
+				"error_type": string(logbassetErr.Type),
+				"exit_code":  logbassetErr.GetExitCode(),
+			}).Error(logbassetErr.Error())
+		}
 		os.Exit(logbassetErr.GetExitCode())
 	}
 
-	logging.Error(err.Error())
+	if OutputJSON {
+		genericErr := &LogBassetError{
+			Type:     APIError,
+			Message:  err.Error(),
+			ExitCode: ExitGeneral,
+		}
+		fmt.Fprintln(os.Stderr, string(genericErr.ToJSON()))
+	} else {
+		logging.Error(err.Error())
+	}
 	os.Exit(ExitGeneral)
 }

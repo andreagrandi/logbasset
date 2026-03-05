@@ -168,6 +168,33 @@ func TestValidateConfig(t *testing.T) {
 			expectError: true,
 		},
 		{
+			name: "server URL with embedded credentials",
+			config: &Config{
+				Token:    "test-token",
+				Server:   "https://user:pass@www.scalyr.com",
+				Priority: "high",
+			},
+			expectError: true,
+		},
+		{
+			name: "server URL with query params",
+			config: &Config{
+				Token:    "test-token",
+				Server:   "https://www.scalyr.com?foo=bar",
+				Priority: "high",
+			},
+			expectError: true,
+		},
+		{
+			name: "server URL with fragment",
+			config: &Config{
+				Token:    "test-token",
+				Server:   "https://www.scalyr.com#section",
+				Priority: "high",
+			},
+			expectError: true,
+		},
+		{
 			name: "invalid log level",
 			config: &Config{
 				Token:    "test-token",

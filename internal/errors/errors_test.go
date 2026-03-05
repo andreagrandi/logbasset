@@ -2,10 +2,12 @@ package errors
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLogBassetError_Error(t *testing.T) {
@@ -149,6 +151,68 @@ func TestLogBassetError_Unwrap(t *testing.T) {
 func TestLogBassetError_NilCause(t *testing.T) {
 	err := NewAuthError("test", nil)
 	assert.Nil(t, err.Unwrap())
+}
+
+func TestLogBassetError_ToJSON(t *testing.T) {
+	tests := []struct {
+		name       string
+		err        *LogBassetError
+		expectType string
+		expectMsg  string
+		expectSugg string
+		expectCode int
+	}{
+		{
+			name:       "auth error",
+			err:        NewAuthError("API token is required", nil),
+			expectType: "AUTH_ERROR",
+			expectMsg:  "API token is required",
+			expectCode: ExitAuth,
+		},
+		{
+			name:       "validation error",
+			err:        NewValidationError("invalid count", fmt.Errorf("too high")),
+			expectType: "VALIDATION_ERROR",
+			expectMsg:  "invalid count",
+			expectCode: ExitValidation,
+		},
+		{
+			name:       "network error",
+			err:        NewNetworkError("connection refused", nil),
+			expectType: "NETWORK_ERROR",
+			expectMsg:  "connection refused",
+			expectCode: ExitNetwork,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data := tt.err.ToJSON()
+
+			var payload struct {
+				Error struct {
+					Type       string `json:"type"`
+					Message    string `json:"message"`
+					Suggestion string `json:"suggestion"`
+					ExitCode   int    `json:"exit_code"`
+				} `json:"error"`
+			}
+
+			err := json.Unmarshal(data, &payload)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectType, payload.Error.Type)
+			assert.Equal(t, tt.expectMsg, payload.Error.Message)
+			assert.Equal(t, tt.expectCode, payload.Error.ExitCode)
+			assert.NotEmpty(t, payload.Error.Suggestion)
+		})
+	}
+}
+
+func TestToJSON_ValidJSON(t *testing.T) {
+	err := NewAPIError("something failed", fmt.Errorf("cause"))
+	data := err.ToJSON()
+
+	assert.True(t, json.Valid(data), "ToJSON should produce valid JSON")
 }
 
 func TestNewContextError(t *testing.T) {

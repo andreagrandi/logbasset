@@ -190,6 +190,23 @@ func ValidateMode(mode string, validModes []string) error {
 		fmt.Errorf("valid modes: %s", strings.Join(validModes, ", ")),
 	)
 }
+
+// ValidateNoControlChars rejects ASCII control characters (0x00-0x1F except tab/newline/CR, and 0x7F).
+func ValidateNoControlChars(input string, fieldName string) error {
+	for i, r := range input {
+		if r == '\t' || r == '\n' || r == '\r' {
+			continue
+		}
+		if (r >= 0x00 && r <= 0x1F) || r == 0x7F {
+			return errors.NewValidationError(
+				fmt.Sprintf("%s contains invalid control character at position %d", fieldName, i),
+				fmt.Errorf("control characters (except tab, newline, CR) are not allowed"),
+			)
+		}
+	}
+	return nil
+}
+
 func ValidateColumns(columns string) error {
 	if columns == "" {
 		return nil
@@ -209,6 +226,48 @@ func ValidateColumns(columns string) error {
 			return errors.NewValidationError(
 				"column names cannot be empty",
 				nil,
+			)
+		}
+
+		if err := ValidateNoControlChars(col, "column name"); err != nil {
+			return err
+		}
+
+		if strings.Contains(col, "../") || strings.Contains(col, "..\\") || strings.HasPrefix(col, "/") || strings.HasPrefix(col, "\\") {
+			return errors.NewValidationError(
+				fmt.Sprintf("column name contains invalid path characters: %s", col),
+				fmt.Errorf("column names must not contain path traversal sequences"),
+			)
+		}
+	}
+
+	return nil
+}
+
+// ValidateFields validates the --fields flag value.
+func ValidateFields(fields string) error {
+	if fields == "" {
+		return nil
+	}
+
+	fieldList := strings.Split(fields, ",")
+	for _, f := range fieldList {
+		f = strings.TrimSpace(f)
+		if f == "" {
+			return errors.NewValidationError(
+				"field names cannot be empty",
+				nil,
+			)
+		}
+
+		if err := ValidateNoControlChars(f, "field name"); err != nil {
+			return err
+		}
+
+		if strings.Contains(f, "../") || strings.Contains(f, "..\\") || strings.HasPrefix(f, "/") || strings.HasPrefix(f, "\\") {
+			return errors.NewValidationError(
+				fmt.Sprintf("field name contains invalid path characters: %s", f),
+				fmt.Errorf("field names must not contain path traversal sequences"),
 			)
 		}
 	}
@@ -292,6 +351,10 @@ func ValidateQueryParams(params QueryValidationParams, config *ValidationConfig)
 	}
 
 	if err := ValidatePriority(params.Priority, config.ValidPriorities); err != nil {
+		return err
+	}
+
+	if err := ValidateNoControlChars(params.Query, "filter"); err != nil {
 		return err
 	}
 

@@ -96,6 +96,11 @@ func runNumericQuery(cmd *cobra.Command, args []string) {
 		errors.HandleErrorAndExit(err)
 	}
 
+	if !cmd.Flags().Changed("output") && !IsTTY() {
+		numericQueryOutput = "json"
+		errors.OutputJSON = true
+	}
+
 	switch numericQueryOutput {
 	case "json":
 		outputJSON(result, false)

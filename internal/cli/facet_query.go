@@ -92,6 +92,11 @@ func runFacetQuery(cmd *cobra.Command, args []string) {
 		errors.HandleErrorAndExit(err)
 	}
 
+	if !cmd.Flags().Changed("output") && !IsTTY() {
+		facetQueryOutput = "json"
+		errors.OutputJSON = true
+	}
+
 	switch facetQueryOutput {
 	case "json":
 		outputJSON(result, false)
