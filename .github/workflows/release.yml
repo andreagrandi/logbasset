@@ -20,7 +20,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25'
+          go-version: '1.26.1'
 
       - name: Cache Go modules
         uses: actions/cache@v5
@@ -28,9 +28,9 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-1.25-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-1.26.1-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-1.25-
+            ${{ runner.os }}-go-1.26.1-
 
       - name: Run tests
         run: make test
