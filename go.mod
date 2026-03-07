@@ -1,6 +1,8 @@
 module github.com/andreagrandi/logbasset
 
-go 1.26.1
+go 1.24
+
+toolchain go1.26.1
 
 require (
 	github.com/sirupsen/logrus v1.9.4

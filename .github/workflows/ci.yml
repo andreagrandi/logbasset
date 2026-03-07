@@ -10,10 +10,10 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
-        go-version: ['1.26.1']
+        go-version: ['1.24', '1.25', '1.26.1']
     
     steps:
     - name: Checkout code
@@ -57,10 +57,10 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
-        go-version: ['1.26.1']
+        go-version: ['1.24', '1.25', '1.26.1']
     
     steps:
     - name: Checkout code
