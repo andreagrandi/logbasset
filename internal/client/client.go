@@ -18,7 +18,29 @@ import (
 const (
 	DefaultServer = "https://www.scalyr.com"
 	APIVersion    = "v1"
+	redactedValue = "***REDACTED***"
 )
+
+var sensitiveParamKeys = []string{"token", "Token", "TOKEN"}
+
+// redactSensitiveParams returns a shallow copy of params with sensitive values
+// (such as the Scalyr API token) replaced by a placeholder. The original map is
+// left untouched so the real request payload is unaffected.
+func redactSensitiveParams(params map[string]interface{}) map[string]interface{} {
+	if params == nil {
+		return nil
+	}
+	redacted := make(map[string]interface{}, len(params))
+	for k, v := range params {
+		redacted[k] = v
+	}
+	for _, key := range sensitiveParamKeys {
+		if _, ok := redacted[key]; ok {
+			redacted[key] = redactedValue
+		}
+	}
+	return redacted
+}
 
 type Client struct {
 	server     string
@@ -77,7 +99,12 @@ func (c *Client) makeRequest(ctx context.Context, endpoint string, params map[st
 			"url":      url,
 			"endpoint": endpoint,
 		}).Debug("Making HTTP request")
-		logging.WithField("request_data", string(jsonData)).Debug("Request payload")
+		redactedJSON, err := json.Marshal(redactSensitiveParams(params))
+		if err != nil {
+			logging.WithField("error", err).Debug("Failed to marshal redacted request payload for logging")
+		} else {
+			logging.WithField("request_data", string(redactedJSON)).Debug("Request payload")
+		}
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
