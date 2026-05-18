@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Security
+- Redact Scalyr API token in verbose/debug log output of request payloads (#37)
+
 ## v0.4.8 - 2026-03-05
 
 ### Changed

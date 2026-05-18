@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/andreagrandi/logbasset/internal/logging"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -556,6 +558,138 @@ func TestMockHTTPClient_DefaultBehavior(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.NotNil(t, resp)
+}
+
+func TestRedactSensitiveParams(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    map[string]interface{}
+		expected map[string]interface{}
+	}{
+		{
+			name:     "nil map",
+			input:    nil,
+			expected: nil,
+		},
+		{
+			name:     "empty map",
+			input:    map[string]interface{}{},
+			expected: map[string]interface{}{},
+		},
+		{
+			name: "redacts token field",
+			input: map[string]interface{}{
+				"token":  "super-secret",
+				"filter": "error",
+			},
+			expected: map[string]interface{}{
+				"token":  "***REDACTED***",
+				"filter": "error",
+			},
+		},
+		{
+			name: "no token field is unchanged",
+			input: map[string]interface{}{
+				"filter":    "error",
+				"queryType": "log",
+			},
+			expected: map[string]interface{}{
+				"filter":    "error",
+				"queryType": "log",
+			},
+		},
+		{
+			name: "preserves continuationToken (not a credential field)",
+			input: map[string]interface{}{
+				"token":             "secret",
+				"continuationToken": "cursor-abc",
+			},
+			expected: map[string]interface{}{
+				"token":             "***REDACTED***",
+				"continuationToken": "cursor-abc",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := redactSensitiveParams(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestRedactSensitiveParams_DoesNotMutateInput(t *testing.T) {
+	original := map[string]interface{}{
+		"token":  "super-secret",
+		"filter": "error",
+	}
+	_ = redactSensitiveParams(original)
+	assert.Equal(t, "super-secret", original["token"], "original params map must not be mutated")
+}
+
+func TestClient_makeRequest_VerboseLogsRedactToken(t *testing.T) {
+	// Capture log output and force debug level
+	originalLevel := logging.GetLogger().GetLevel()
+	originalOutput := logging.GetLogger().Out
+	defer func() {
+		logging.GetLogger().SetLevel(originalLevel)
+		logging.SetOutput(originalOutput)
+	}()
+
+	var logBuf bytes.Buffer
+	logging.SetOutput(&logBuf)
+	logging.GetLogger().SetLevel(logrus.DebugLevel)
+
+	mockClient := &MockHTTPClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			// Confirm the actual request body still contains the real token —
+			// redaction is for logs only, not for the request itself.
+			body, _ := io.ReadAll(req.Body)
+			var reqData map[string]interface{}
+			require.NoError(t, json.Unmarshal(body, &reqData))
+			assert.Equal(t, "super-secret-token", reqData["token"])
+
+			return &http.Response{
+				StatusCode: 200,
+				Body:       io.NopCloser(strings.NewReader(`{"status":"success"}`)),
+			}, nil
+		},
+	}
+
+	client := NewWithHTTPClient("super-secret-token", "https://test.com", true, mockClient)
+	ctx := context.Background()
+
+	_, err := client.makeRequest(ctx, "query", map[string]interface{}{"filter": "error"})
+	require.NoError(t, err)
+
+	logOutput := logBuf.String()
+	assert.NotContains(t, logOutput, "super-secret-token", "log output must not contain the raw API token")
+	assert.Contains(t, logOutput, "***REDACTED***", "log output should contain the redaction placeholder")
+	// Useful debug context should still be present.
+	assert.Contains(t, logOutput, "filter")
+	assert.Contains(t, logOutput, "https://test.com/api/query")
+	assert.Contains(t, logOutput, "endpoint")
+}
+
+func TestClient_makeRequest_OriginalParamsNotMutated(t *testing.T) {
+	mockClient := &MockHTTPClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: 200,
+				Body:       io.NopCloser(strings.NewReader(`{"status":"success"}`)),
+			}, nil
+		},
+	}
+
+	client := NewWithHTTPClient("super-secret-token", "https://test.com", true, mockClient)
+	params := map[string]interface{}{"filter": "error"}
+	_, err := client.makeRequest(context.Background(), "query", params)
+	require.NoError(t, err)
+
+	// makeRequest sets params["token"] for the real request body; ensure it
+	// holds the actual token, not the redacted placeholder.
+	assert.Equal(t, "super-secret-token", params["token"])
 }
 
 func TestClient_makeRequest_ContextCancellation(t *testing.T) {
