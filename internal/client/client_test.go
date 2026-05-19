@@ -132,6 +132,7 @@ func TestClient_makeRequest_NetworkError(t *testing.T) {
 	}
 
 	client := NewWithHTTPClient("token", "https://test.com", false, mockClient)
+	client.SetRetryPolicy(RetryPolicy{MaxRetries: 0})
 	ctx := context.Background()
 
 	_, err := client.makeRequest(ctx, "query", map[string]interface{}{})
