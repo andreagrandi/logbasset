@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Changed
+- Consolidated cross-file CLI output helpers and removed unused `internal/output` package (#38)
+
 ### Security
 - Redact Scalyr API token in verbose/debug log output of request payloads (#37)
 
