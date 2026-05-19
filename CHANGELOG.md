@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+- Bounded retry with exponential backoff and jitter for transient network failures and 5xx responses; honor `Retry-After` on 429 throttling (#39)
+
 ### Changed
 - Consolidated cross-file CLI output helpers and removed unused `internal/output` package (#38)
 
