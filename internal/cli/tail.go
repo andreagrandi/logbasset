@@ -31,7 +31,7 @@ var (
 
 func init() {
 	tailCmd.Flags().IntVarP(&tailLines, "lines", "n", 10, "Output the previous K lines when starting the tail")
-	tailCmd.Flags().StringVar(&tailOutput, "output", "messageonly", "Output format: multiline|singleline|messageonly|json")
+	tailCmd.Flags().StringVar(&tailOutput, "output", "messageonly", "Output format: multiline|singleline|compact|messageonly|json")
 }
 
 func runTail(cmd *cobra.Command, args []string) {
@@ -97,6 +97,8 @@ func runTail(cmd *cobra.Command, args []string) {
 			outputTailMultiLine(event)
 		case "singleline":
 			outputTailSingleLine(event)
+		case "compact":
+			outputTailCompact(event)
 		case "json":
 			outputTailJSON(event)
 		default:
@@ -115,6 +117,10 @@ func outputTailJSON(event client.LogEvent) {
 
 func outputTailMessageOnly(event client.LogEvent) {
 	fmt.Println(event.Message)
+}
+
+func outputTailCompact(event client.LogEvent) {
+	fmt.Printf("%s %s %s\n", formatCompactTimestamp(event.Timestamp), severityChar(event.Severity), event.Message)
 }
 
 func outputTailSingleLine(event client.LogEvent) {

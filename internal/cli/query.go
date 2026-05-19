@@ -42,7 +42,7 @@ func init() {
 	queryCmd.Flags().IntVar(&queryCount, "count", 10, "Number of log records to retrieve (1-5000)")
 	queryCmd.Flags().StringVar(&queryMode, "mode", "", "Display mode: head or tail")
 	queryCmd.Flags().StringVar(&queryColumns, "columns", "", "Comma-separated list of columns to display")
-	queryCmd.Flags().StringVar(&queryOutput, "output", "multiline", "Output format: multiline|singleline|csv|json|json-pretty")
+	queryCmd.Flags().StringVar(&queryOutput, "output", "multiline", "Output format: multiline|singleline|compact|csv|json|json-pretty")
 	queryCmd.Flags().StringVar(&queryFields, "fields", "", "Comma-separated fields to include in JSON output (e.g., timestamp,message,severity)")
 }
 
@@ -134,6 +134,11 @@ func runQuery(cmd *cobra.Command, args []string) {
 			logging.Warn("--fields is only supported with json/json-pretty output, ignoring")
 		}
 		outputSingleLine(result.Matches)
+	case "compact":
+		if queryFields != "" {
+			logging.Warn("--fields is only supported with json/json-pretty output, ignoring")
+		}
+		outputCompact(result.Matches)
 	default:
 		if queryFields != "" {
 			logging.Warn("--fields is only supported with json/json-pretty output, ignoring")
@@ -234,6 +239,12 @@ func outputSingleLine(events []client.LogEvent) {
 			fmt.Printf(" [%s]", strings.Join(attrs, ", "))
 		}
 		fmt.Println()
+	}
+}
+
+func outputCompact(events []client.LogEvent) {
+	for _, event := range events {
+		fmt.Printf("%s %s %s\n", formatCompactTimestamp(event.Timestamp), severityChar(event.Severity), event.Message)
 	}
 }
 

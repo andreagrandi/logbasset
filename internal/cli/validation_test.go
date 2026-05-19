@@ -84,6 +84,13 @@ func TestValidationIntegration(t *testing.T) {
 			wantError: true,
 		},
 		{
+			name: "compact output is valid",
+			params: validation.QueryValidationParams{
+				Output: "compact",
+			},
+			wantError: false,
+		},
+		{
 			name: "invalid priority",
 			params: validation.QueryValidationParams{
 				Priority: "medium",

@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ### Added
+- `compact` output format for `query` and `tail` showing one event per line as `HH:MM:SS <severity> <message>` for scanning large result sets (#40)
+- `--pager` global flag that pipes output through `$PAGER` (defaults to `less -RF`) when stdout is a terminal (#40)
 - Bounded retry with exponential backoff and jitter for transient network failures and 5xx responses; honor `Retry-After` on 429 throttling (#39)
 
 ### Changed

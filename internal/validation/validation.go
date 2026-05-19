@@ -31,7 +31,7 @@ func DefaultConfig() *ValidationConfig {
 		MaxBuckets:      5000,
 		MaxFacetCount:   1000,
 		MaxTailLines:    10000,
-		ValidOutputs:    []string{"multiline", "singleline", "csv", "json", "json-pretty", "messageonly"},
+		ValidOutputs:    []string{"multiline", "singleline", "compact", "csv", "json", "json-pretty", "messageonly"},
 		ValidPriorities: []string{"high", "low"},
 		ValidModes:      []string{"head", "tail"},
 	}

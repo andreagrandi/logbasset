@@ -18,6 +18,9 @@ var (
 	flagLogLevel    string
 	flagTimeout     time.Duration
 	flagErrorFormat string
+	flagPager       bool
+
+	activePager *pagerProcess
 )
 
 var rootCmd = &cobra.Command{
@@ -61,7 +64,15 @@ The following commands are currently supported:
 			return err
 		}
 
-		return cfg.Validate()
+		if err := cfg.Validate(); err != nil {
+			return err
+		}
+
+		if flagPager {
+			activePager = startPager()
+		}
+
+		return nil
 	},
 }
 
@@ -73,6 +84,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&flagLogLevel, "log-level", "info", "Log level (debug|info|warn|error)")
 	rootCmd.PersistentFlags().DurationVar(&flagTimeout, "timeout", 30*time.Second, "Request timeout (e.g., 30s, 2m, 1h)")
 	rootCmd.PersistentFlags().StringVar(&flagErrorFormat, "error-format", "text", "Error output format: text|json")
+	rootCmd.PersistentFlags().BoolVar(&flagPager, "pager", false, "Pipe output through $PAGER (default 'less -RF') when stdout is a terminal")
 
 	rootCmd.AddCommand(queryCmd)
 	rootCmd.AddCommand(powerQueryCmd)
@@ -85,6 +97,10 @@ func init() {
 }
 
 func Execute() error {
+	errors.BeforeExit = func() {
+		activePager.stop()
+	}
+	defer activePager.stop()
 	return rootCmd.Execute()
 }
 
