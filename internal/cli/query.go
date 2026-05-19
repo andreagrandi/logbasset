@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
@@ -182,23 +181,6 @@ func outputFilteredJSON(events []client.LogEvent, fields string, pretty bool) {
 	}
 
 	outputJSON(filtered, pretty)
-}
-
-func outputJSON(data any, pretty bool) {
-	var output []byte
-	var err error
-
-	if pretty {
-		output, err = json.MarshalIndent(data, "", "  ")
-	} else {
-		output, err = json.Marshal(data)
-	}
-
-	if err != nil {
-		errors.HandleErrorAndExit(errors.NewParseError("failed to marshal JSON", err))
-	}
-
-	fmt.Println(string(output))
 }
 
 func outputCSV(events []client.LogEvent, columns string) {

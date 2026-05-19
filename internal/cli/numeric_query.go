@@ -2,10 +2,8 @@ package cli
 
 import (
 	"context"
-	"encoding/csv"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 
 	"github.com/andreagrandi/logbasset/internal/client"
@@ -109,15 +107,4 @@ func runNumericQuery(cmd *cobra.Command, args []string) {
 	default:
 		outputNumericCSV(result.Values)
 	}
-}
-
-func outputNumericCSV(values []float64) {
-	writer := csv.NewWriter(os.Stdout)
-	defer writer.Flush()
-
-	record := make([]string, len(values))
-	for i, val := range values {
-		record[i] = strconv.FormatFloat(val, 'f', -1, 64)
-	}
-	writer.Write(record)
 }
