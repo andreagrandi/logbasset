@@ -11,6 +11,20 @@ Before making code or documentation changes in this repo:
 
 Do not start work from an old feature branch unless the user explicitly asks to continue that branch.
 
+## When Adding User-Facing Features
+
+Any change that adds, renames, or removes a flag, command, output format, or
+exit code must update every place users (and agents) discover it. Skipping any
+of these leaves the docs lying:
+
+- `README.md` — user-facing examples and option lists.
+- `CHANGELOG.md` — entry under `[Unreleased]` referencing the issue/PR.
+- `CONTEXT.md` **and** `internal/cli/context_embed.md` — both must stay
+  byte-identical; the embed file is compiled into the `context` command.
+- `internal/cli/schema.go` — enum/default/description entries for the
+  affected command so `logbasset schema` reports the new state.
+- Help strings on the relevant `cobra.Command` flag definitions.
+
 ## Project Structure
 LogBasset follows the standard Go project layout:
 ```
