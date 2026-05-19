@@ -38,6 +38,7 @@ Server URL (default `https://www.scalyr.com`):
 | `--log-level` | string | `info` | Log level: `debug`, `info`, `warn`, `error` |
 | `--timeout` | duration | `30s` | Request timeout (e.g., `30s`, `2m`) |
 | `--error-format` | string | `text` | Error output format: `text` or `json` |
+| `--pager` | bool | false | Pipe output through `$PAGER` (default `less -RF`) when stdout is a terminal |
 
 ## Flags That Do NOT Exist
 
@@ -61,13 +62,15 @@ When using `--start` without `--end`, the API returns only 24h from start. Use `
 ## Output Formats
 
 ### query command
-`--output`: `multiline` (default in TTY), `singleline`, `csv`, `json` (default in pipe), `json-pretty`, `messageonly`
+`--output`: `multiline` (default in TTY), `singleline`, `compact`, `csv`, `json` (default in pipe), `json-pretty`, `messageonly`
+
+`compact` prints one event per line as `HH:MM:SS <severity-char> <message>` where the severity char is `D` (≤2), `I` (3), `W` (4), `E` (5), or `F` (≥6). Designed for scanning large result sets.
 
 ### power-query, numeric-query, facet-query, timeseries-query
 `--output`: `csv` (default in TTY), `json` (default in pipe), `json-pretty`
 
 ### tail command
-`--output`: `messageonly` (default in TTY), `multiline`, `singleline`, `json` (default in pipe)
+`--output`: `messageonly` (default in TTY), `multiline`, `singleline`, `compact`, `json` (default in pipe)
 
 Use `--fields` with `query --output json` to select specific fields and reduce output size.
 

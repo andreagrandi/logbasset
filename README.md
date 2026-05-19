@@ -143,7 +143,7 @@ logbasset query '$source="accessLog"' --output=csv --columns='status,uriPath' --
 - `--count=nnn`: Number of log records to retrieve (1-5000), defaults to 10
 - `--mode=head|tail`: Whether to display from start or end of time range
 - `--columns="..."`: Which log attributes to display (comma-separated)
-- `--output=multiline|singleline|csv|json|json-pretty`: Output format
+- `--output=multiline|singleline|compact|csv|json|json-pretty`: Output format
 - `--priority=high|low`: Query execution priority
 
 ### Power Query
@@ -242,7 +242,7 @@ logbasset tail --output multiline
 
 **Options:**
 - `--lines=K` or `-n K`: Output the previous K lines when starting (defaults to 10)
-- `--output=multiline|singleline|messageonly`: Output format (defaults to messageonly)
+- `--output=multiline|singleline|compact|messageonly`: Output format (defaults to messageonly)
 - `--priority=high|low`: Query execution priority
 
 ## Global Options
@@ -254,6 +254,7 @@ These options are available for all commands:
 - `--verbose`: Enable verbose output for debugging
 - `--priority=high|low`: Query execution priority (defaults to high)
 - `--log-level=debug|info|warn|error`: Set logging level (defaults to info)
+- `--pager`: Pipe output through `$PAGER` (defaults to `less -RF`) when stdout is a terminal
 
 ## Output Formats
 
@@ -269,7 +270,24 @@ These options are available for all commands:
 ### Text Output
 - `multiline`: Verbose format with each attribute on separate lines
 - `singleline`: Compact format with all attributes on one line
+- `compact`: One line per event, `HH:MM:SS <severity> <message>` — designed for scanning large result sets
 - `messageonly`: Only the log message (useful for tail)
+
+In `compact` mode the severity column is a single letter: `D` (debug, severity ≤ 2), `I` (info, 3), `W` (warning, 4), `E` (error, 5), `F` (fatal, ≥ 6).
+
+### Paging Large Output
+
+Two ways to make large query results easier to scan:
+
+```bash
+# Built-in: pipe through $PAGER (defaults to less -RF) while keeping stderr on the terminal
+logbasset query 'error' --count=5000 --output=compact --pager
+
+# Manual: just pipe to your pager of choice
+logbasset query 'error' --count=5000 --output=compact | less -R
+```
+
+`--pager` only activates when stdout is a terminal, so scripts and pipelines (including JSON/CSV output redirected to a file) are unaffected.
 
 ## Usage Limits
 

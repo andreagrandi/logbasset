@@ -100,7 +100,7 @@ var schemas = map[string]commandSchema{
 			{Name: "count", Type: "integer", Required: false, Default: 10, Description: "Number of log records (1-5000)"},
 			{Name: "mode", Type: "string", Required: false, Enum: []string{"head", "tail"}, Description: "Display mode"},
 			{Name: "columns", Type: "string", Required: false, Description: "Comma-separated list of columns"},
-			{Name: "output", Type: "string", Required: false, Default: "multiline", Enum: []string{"multiline", "singleline", "csv", "json", "json-pretty", "messageonly"}, Description: "Output format"},
+			{Name: "output", Type: "string", Required: false, Default: "multiline", Enum: []string{"multiline", "singleline", "compact", "csv", "json", "json-pretty", "messageonly"}, Description: "Output format"},
 			{Name: "fields", Type: "string", Required: false, Description: "Comma-separated fields to include in JSON output (e.g., timestamp,message,severity)"},
 		},
 		OutputKeys: []string{"timestamp", "severity", "message", "thread", "attributes"},
@@ -167,7 +167,7 @@ var schemas = map[string]commandSchema{
 		},
 		Flags: []paramSchema{
 			{Name: "lines", Type: "integer", Required: false, Default: 10, Description: "Number of previous lines to show (-n)"},
-			{Name: "output", Type: "string", Required: false, Default: "messageonly", Enum: []string{"messageonly", "multiline", "singleline", "json"}, Description: "Output format"},
+			{Name: "output", Type: "string", Required: false, Default: "messageonly", Enum: []string{"messageonly", "multiline", "singleline", "compact", "json"}, Description: "Output format"},
 		},
 		OutputKeys: []string{"timestamp", "severity", "message", "thread", "attributes"},
 	},

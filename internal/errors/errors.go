@@ -12,6 +12,17 @@ import (
 // OutputJSON controls whether errors are emitted as JSON on stderr.
 var OutputJSON bool
 
+// BeforeExit, if set, is invoked just before HandleErrorAndExit calls os.Exit.
+// Use it to flush buffers or tear down subprocesses (e.g. a pager) that would
+// otherwise be skipped because os.Exit does not run deferred functions.
+var BeforeExit func()
+
+func runBeforeExit() {
+	if BeforeExit != nil {
+		BeforeExit()
+	}
+}
+
 type ErrorType string
 
 const (
@@ -191,6 +202,7 @@ func NewContextError(message string, cause error) *LogBassetError {
 
 func HandleErrorAndExit(err error) {
 	if err == nil {
+		runBeforeExit()
 		os.Exit(ExitSuccess)
 	}
 
@@ -203,6 +215,7 @@ func HandleErrorAndExit(err error) {
 				"exit_code":  logbassetErr.GetExitCode(),
 			}).Error(logbassetErr.Error())
 		}
+		runBeforeExit()
 		os.Exit(logbassetErr.GetExitCode())
 	}
 
@@ -216,5 +229,6 @@ func HandleErrorAndExit(err error) {
 	} else {
 		logging.Error(err.Error())
 	}
+	runBeforeExit()
 	os.Exit(ExitGeneral)
 }

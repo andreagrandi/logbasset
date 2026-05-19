@@ -6,9 +6,41 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/andreagrandi/logbasset/internal/errors"
 )
+
+// formatCompactTimestamp converts a Scalyr nanosecond timestamp string into HH:MM:SS.
+// Falls back to the original value if parsing fails.
+func formatCompactTimestamp(ts string) string {
+	if ts == "" {
+		return ""
+	}
+	if nanos, err := strconv.ParseInt(ts, 10, 64); err == nil {
+		return time.Unix(0, nanos).UTC().Format("15:04:05")
+	}
+	if t, err := time.Parse(time.RFC3339Nano, ts); err == nil {
+		return t.UTC().Format("15:04:05")
+	}
+	return ts
+}
+
+// severityChar maps a Scalyr severity level to a single character for compact output.
+func severityChar(sev int) string {
+	switch {
+	case sev <= 2:
+		return "D"
+	case sev == 3:
+		return "I"
+	case sev == 4:
+		return "W"
+	case sev == 5:
+		return "E"
+	default:
+		return "F"
+	}
+}
 
 func outputJSON(data any, pretty bool) {
 	var output []byte
