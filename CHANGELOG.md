@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## v0.5.0 - 2026-05-20
 
 ### Added
 - Install smoke tests (`scripts/smoke-test.sh`, `make smoke-test`) that verify built binaries and release artifacts respond to `--version`, `--help`, and no-credential commands; wired into CI and the release workflow, with an expanded Homebrew formula test block (#44)

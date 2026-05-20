@@ -2,7 +2,7 @@ package app
 
 const (
 	Name    = "logbasset"
-	Version = "0.4.8"
+	Version = "0.5.0"
 	Author  = "Andrea Grandi"
 	License = "Apache-2.0"
 )
