@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- CLI end-to-end tests covering docs examples and JSON/CSV/text output formats against mocked HTTP responses, with no real Scalyr credentials required (#43)
 - `schema` now reports per-command `examples` and a `read_only` flag, and accepts `schema global` for the flags shared by every command (#41)
 - Agent context (`context`) gained Common Workflows and Safety and Cost Guidance sections (#41)
 - `compact` output format for `query` and `tail` showing one event per line as `HH:MM:SS <severity> <message>` for scanning large result sets (#40)
