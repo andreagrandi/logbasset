@@ -163,6 +163,7 @@ client := cfg.GetClient()
 - `make test-verbose` - Run tests with verbose output
 - `make test-client` - Run tests for client package only
 - `make test-cli` - Run tests for CLI package only
+- `make smoke-test` - Smoke-test the built binary (no API credentials needed)
 - `make fmt` - Format code
 - `make vet` - Static analysis
 - `make lint` - Run linter (requires golangci-lint)

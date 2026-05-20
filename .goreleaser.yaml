@@ -74,5 +74,7 @@ brews:
     license: "MIT"
     test: |
       system "#{bin}/logbasset --version"
+      system "#{bin}/logbasset --help"
+      system "#{bin}/logbasset schema"
     install: |
       bin.install "logbasset"
