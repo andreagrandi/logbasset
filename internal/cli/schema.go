@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/andreagrandi/logbasset/internal/errors"
 	"github.com/spf13/cobra"
@@ -13,7 +14,7 @@ var schemaPretty bool
 var schemaCmd = &cobra.Command{
 	Use:   "schema [command]",
 	Short: "Print JSON schema for command inputs and outputs",
-	Long:  "Prints JSON schema describing a command's parameters, types, defaults, and valid values. With no arguments, lists all commands.",
+	Long:  "Prints JSON schema describing a command's parameters, types, defaults, valid values, and examples. With no arguments, lists all commands. Pass 'global' for the flags shared by every command.",
 	Args:  cobra.MaximumNArgs(1),
 	Run:   runSchema,
 }
@@ -38,9 +39,11 @@ type paramSchema struct {
 
 type commandSchema struct {
 	Command    string        `json:"command"`
+	ReadOnly   bool          `json:"read_only"`
 	Args       []paramSchema `json:"args,omitempty"`
 	Flags      []paramSchema `json:"flags"`
 	OutputKeys []string      `json:"output_keys,omitempty"`
+	Examples   []string      `json:"examples,omitempty"`
 }
 
 func runSchema(cmd *cobra.Command, args []string) {
@@ -51,9 +54,13 @@ func runSchema(cmd *cobra.Command, args []string) {
 
 	schema, ok := schemas[args[0]]
 	if !ok {
+		var names []string
+		for _, c := range getCommandList() {
+			names = append(names, c.Name)
+		}
 		errors.HandleErrorAndExit(errors.NewUsageError(
 			fmt.Sprintf("unknown command: %s", args[0]),
-			fmt.Errorf("valid commands: query, power-query, numeric-query, facet-query, timeseries-query, tail"),
+			fmt.Errorf("valid commands: %s", strings.Join(names, ", ")),
 		))
 	}
 
@@ -85,12 +92,27 @@ func getCommandList() []commandSummary {
 		{Name: "facet-query", Description: "Retrieve common values for a field"},
 		{Name: "timeseries-query", Description: "Retrieve timeseries data"},
 		{Name: "tail", Description: "Provide a live tail of a log"},
+		{Name: "global", Description: "Flags shared by every command (schema target only, not a runnable command)"},
+	}
+}
+
+func globalFlags() []paramSchema {
+	return []paramSchema{
+		{Name: "token", Type: "string", Required: false, Description: "API token (or scalyr_readlog_token env var)"},
+		{Name: "server", Type: "string", Required: false, Default: "https://www.scalyr.com", Description: "Scalyr server URL (or scalyr_server env var)"},
+		{Name: "verbose", Type: "boolean", Required: false, Default: false, Description: "Enable verbose output"},
+		{Name: "priority", Type: "string", Required: false, Default: "high", Enum: []string{"high", "low"}, Description: "Query priority; use 'low' for heavy or background queries"},
+		{Name: "log-level", Type: "string", Required: false, Default: "info", Enum: []string{"debug", "info", "warn", "error"}, Description: "Log level"},
+		{Name: "timeout", Type: "string", Required: false, Default: "30s", Description: "Request timeout (e.g., 30s, 2m)"},
+		{Name: "error-format", Type: "string", Required: false, Default: "text", Enum: []string{"text", "json"}, Description: "Error output format"},
+		{Name: "pager", Type: "boolean", Required: false, Default: false, Description: "Pipe output through $PAGER (default 'less -RF') when stdout is a terminal"},
 	}
 }
 
 var schemas = map[string]commandSchema{
 	"query": {
-		Command: "query",
+		Command:  "query",
+		ReadOnly: true,
 		Args: []paramSchema{
 			{Name: "filter", Type: "string", Required: false, Description: "Log filter expression"},
 		},
@@ -104,9 +126,14 @@ var schemas = map[string]commandSchema{
 			{Name: "fields", Type: "string", Required: false, Description: "Comma-separated fields to include in JSON output (e.g., timestamp,message,severity)"},
 		},
 		OutputKeys: []string{"timestamp", "severity", "message", "thread", "attributes"},
+		Examples: []string{
+			"logbasset query 'severity=\"error\"' --start 1h --count 100 --output json",
+			"logbasset query '\"req-abc123\"' --start 24h --end NOW --output json --fields timestamp,message",
+		},
 	},
 	"power-query": {
-		Command: "power-query",
+		Command:  "power-query",
+		ReadOnly: true,
 		Args: []paramSchema{
 			{Name: "query", Type: "string", Required: true, Description: "PowerQuery expression"},
 		},
@@ -115,9 +142,13 @@ var schemas = map[string]commandSchema{
 			{Name: "end", Type: "string", Required: false, Description: "End time"},
 			{Name: "output", Type: "string", Required: false, Default: "csv", Enum: []string{"csv", "json", "json-pretty"}, Description: "Output format"},
 		},
+		Examples: []string{
+			"logbasset power-query 'severity=\"error\" | group count by serverHost' --start 1h --output json",
+		},
 	},
 	"numeric-query": {
-		Command: "numeric-query",
+		Command:  "numeric-query",
+		ReadOnly: true,
 		Args: []paramSchema{
 			{Name: "filter", Type: "string", Required: false, Description: "Log filter expression"},
 		},
@@ -129,9 +160,13 @@ var schemas = map[string]commandSchema{
 			{Name: "output", Type: "string", Required: false, Default: "csv", Enum: []string{"csv", "json", "json-pretty"}, Description: "Output format"},
 		},
 		OutputKeys: []string{"values"},
+		Examples: []string{
+			"logbasset numeric-query 'severity=\"error\"' --function count --start 24h --buckets 24 --output json",
+		},
 	},
 	"facet-query": {
-		Command: "facet-query",
+		Command:  "facet-query",
+		ReadOnly: true,
 		Args: []paramSchema{
 			{Name: "filter", Type: "string", Required: true, Description: "Log filter expression"},
 			{Name: "field", Type: "string", Required: true, Description: "Field name to facet on"},
@@ -143,9 +178,13 @@ var schemas = map[string]commandSchema{
 			{Name: "output", Type: "string", Required: false, Default: "csv", Enum: []string{"csv", "json", "json-pretty"}, Description: "Output format"},
 		},
 		OutputKeys: []string{"value", "count"},
+		Examples: []string{
+			"logbasset facet-query '*' uriPath --start 24h --count 20 --output json",
+		},
 	},
 	"timeseries-query": {
-		Command: "timeseries-query",
+		Command:  "timeseries-query",
+		ReadOnly: true,
 		Args: []paramSchema{
 			{Name: "filter", Type: "string", Required: false, Description: "Log filter expression"},
 		},
@@ -159,9 +198,13 @@ var schemas = map[string]commandSchema{
 			{Name: "no-create-summaries", Type: "boolean", Required: false, Default: false, Description: "Don't create summaries"},
 		},
 		OutputKeys: []string{"values"},
+		Examples: []string{
+			"logbasset timeseries-query 'severity=\"error\"' --function count --start 24h --buckets 24 --output json",
+		},
 	},
 	"tail": {
-		Command: "tail",
+		Command:  "tail",
+		ReadOnly: true,
 		Args: []paramSchema{
 			{Name: "filter", Type: "string", Required: false, Description: "Log filter expression"},
 		},
@@ -170,5 +213,13 @@ var schemas = map[string]commandSchema{
 			{Name: "output", Type: "string", Required: false, Default: "messageonly", Enum: []string{"messageonly", "multiline", "singleline", "compact", "json"}, Description: "Output format"},
 		},
 		OutputKeys: []string{"timestamp", "severity", "message", "thread", "attributes"},
+		Examples: []string{
+			"logbasset tail 'severity=\"error\"' --lines 50 --output json",
+		},
+	},
+	"global": {
+		Command:  "global",
+		ReadOnly: true,
+		Flags:    globalFlags(),
 	},
 }

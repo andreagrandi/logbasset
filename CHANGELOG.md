@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ### Added
+- `schema` now reports per-command `examples` and a `read_only` flag, and accepts `schema global` for the flags shared by every command (#41)
+- Agent context (`context`) gained Common Workflows and Safety and Cost Guidance sections (#41)
 - `compact` output format for `query` and `tail` showing one event per line as `HH:MM:SS <severity> <message>` for scanning large result sets (#40)
 - `--pager` global flag that pipes output through `$PAGER` (defaults to `less -RF`) when stdout is a terminal (#40)
 - Bounded retry with exponential backoff and jitter for transient network failures and 5xx responses; honor `Retry-After` on 429 throttling (#39)
