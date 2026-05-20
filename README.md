@@ -297,40 +297,190 @@ For the tail command, you're limited to a maximum of 1,000 log records per 10 se
 
 If you need higher limits, contact [support@scalyr.com](mailto:support@scalyr.com).
 
-## Examples
+## Recipes
 
-### Basic Log Analysis
+Copy-paste-friendly recipes for common log investigation workflows. Every
+example uses current CLI flags -- adjust the filters, fields, and time ranges
+to match your data.
+
+### Filtering and searching
 
 ```bash
-# Find all errors in the last hour
+# All errors in the last hour
 logbasset query 'severity >= 3' --start=1h
 
-# Count requests per minute for the last hour
-logbasset numeric-query '$dataset="accesslog"' --start=1h --buckets=60
+# Errors right up to the current moment
+# (without --end, only the first 24h after --start is searched -- see Troubleshooting)
+logbasset query 'severity >= 3' --start=24h --end=NOW
 
-# Find most common error messages
+# Trace a request or correlation ID across all logs (quote the literal text)
+logbasset query '"req-abc123"' --start=24h --end=NOW
+
+# Restrict to a single host and log source
+logbasset query '$serverHost="host100" $source="accessLog"' --start=1h
+
+# Show only the columns you care about, newest entries first
+logbasset query 'severity >= 3' --start=1h --count=100 --columns='timestamp,severity,message' --mode=tail
+
+# Scan a large result set, one event per line, through a pager
+logbasset query 'severity >= 3' --start=24h --end=NOW --count=5000 --output=compact --pager
+```
+
+### Breaking down values with facets
+
+```bash
+# Most common HTTP request URLs
+logbasset facet-query '$source="accessLog"' uriPath --start=24h --count=20
+
+# Most common response codes for a single endpoint
+logbasset facet-query 'uriPath="/index.html"' status --start=24h
+
+# Most common error messages
 logbasset facet-query 'severity >= 3' message --start=24h --count=20
 ```
 
-### Performance Monitoring
+### Numeric queries for trends
 
 ```bash
-# Monitor response times
-logbasset numeric-query '$dataset="accesslog"' --function='mean(responseTime)' --start=1h --buckets=12
+# Error count per hour over the last day
+logbasset numeric-query 'severity >= 3' --function=count --start=24h --buckets=24
 
-# Find slowest endpoints
-logbasset power-query 'dataset="accesslog" | group avg_time=mean(responseTime), count=count() by uriPath | sort -avg_time' --start=1h
+# Request volume per minute for the last hour
+logbasset numeric-query '$source="accessLog"' --function=count --start=1h --buckets=60
+
+# Average response time in 5-minute buckets
+logbasset numeric-query '$source="accessLog"' --function='mean(responseTime)' --start=1h --buckets=12
 ```
 
-### Live Monitoring
+### Timeseries queries for repeated dashboards
+
+`timeseries-query` takes the same shape as `numeric-query` but reads precomputed
+summaries, so it is much faster for queries you run again and again.
 
 ```bash
-# Monitor errors in real-time
+# Error count per hour, backed by summaries
+logbasset timeseries-query 'severity >= 3' --function=count --start=24h --buckets=24
+
+# Fastest possible read: only existing summaries (may be empty until backfilled)
+logbasset timeseries-query '$source="accessLog"' --function=count --start=7d --buckets=7 --only-use-summaries
+
+# Read without creating new summaries (avoids extra background work)
+logbasset timeseries-query '$source="accessLog"' --function=count --start=24h --buckets=24 --no-create-summaries
+```
+
+### Live tailing
+
+```bash
+# Tail every new error as it arrives
 logbasset tail 'severity >= 3'
 
-# Watch specific application logs
-logbasset tail '$source="myapp"' --output=singleline
+# Tail a single host, starting with the last 50 lines
+logbasset tail '$serverHost="host100"' --lines=50
+
+# Tail with one compact line per event
+logbasset tail 'severity >= 3' --output=compact
 ```
+
+Press `Ctrl+C` to stop a tail cleanly. Tails are capped at 1,000 records per
+10 seconds and expire after 10 minutes (see [Usage Limits](#usage-limits)).
+
+### Investigate an error spike end to end
+
+```bash
+# 1. Find which hour the spike happened in
+logbasset numeric-query 'severity >= 3' --function=count --start=24h --buckets=24
+
+# 2. Read a sample of errors from the affected window
+logbasset query 'severity >= 3' --start=3h --end=NOW --count=50
+
+# 3. Localize the cause by grouping errors per host
+logbasset power-query 'severity >= 3 | group count = count() by serverHost | sort -count' --start=3h
+
+# 4. Rank the error messages driving the spike
+logbasset facet-query 'severity >= 3' message --start=3h --count=20
+```
+
+## Troubleshooting
+
+### Authentication failures (exit code 4)
+
+`API token is required` or `Invalid API token` means LogBasset could not
+authenticate:
+
+- Provide a token via the `scalyr_readlog_token` environment variable, the
+  `--token` flag, or the `token:` key in a config file (see
+  [Configuration](#configuration)).
+- Use a **Read Logs** token from [scalyr.com/keys](https://www.scalyr.com/keys);
+  write or admin tokens do not work for queries.
+- Check the server region. EU accounts must point at `https://eu.scalyr.com`
+  via `scalyr_server` or `--server` -- a token from one region fails against
+  the other.
+
+```bash
+# Confirm the token and server in use, and see the raw API request
+logbasset query --count=1 --verbose
+
+# Get a machine-readable error instead of plain text
+logbasset query --count=1 --error-format=json
+```
+
+### Empty results
+
+A query that succeeds but returns nothing usually means the time range or
+filter did not match -- not that something is broken:
+
+- **Missing `--end`.** With only `--start`, the API searches just the first
+  24 hours after that point. To search up to the current moment, add
+  `--end=NOW`:
+
+  ```bash
+  # Searches 7d-ago .. 6d-ago only
+  logbasset query 'severity >= 3' --start=7d
+
+  # Searches 7d-ago .. now
+  logbasset query 'severity >= 3' --start=7d --end=NOW
+  ```
+
+- **Filter too narrow, or wrong field name.** Drop the filter to confirm data
+  exists, then add conditions back one at a time. Field names are
+  case-sensitive.
+- **Wrong server region.** An EU account queried against the default US server
+  returns no data -- set `--server=https://eu.scalyr.com`.
+- **`timeseries-query --only-use-summaries`** stays empty until summaries have
+  been backfilled for the range; drop the flag to fall back to a live
+  computation.
+
+### Time ranges
+
+- Relative times count backwards from now: `30m`, `1h`, `24h`, `7d`.
+- Absolute times: `2024-01-15` or `2024-01-15 14:30:05`. Time-only values such
+  as `14:30` or `2:30 PM` mean today.
+- `NOW` is valid only for `--end`; it pins the end of the range to the current
+  time.
+- `power-query`, `numeric-query`, `facet-query`, and `timeseries-query` all
+  require `--start`; omitting it is a validation error (exit code 6).
+
+### Timeouts and rate limits
+
+- `operation timed out` means the query exceeded `--timeout` (default `30s`).
+  Raise it (`--timeout=2m`), narrow the time range, or fetch fewer records
+  with `--count`.
+- Aggregations (`power-query`, `numeric-query`, `facet-query`,
+  `timeseries-query`) summarize wide ranges far more cheaply than pulling many
+  raw records with `query`.
+- Use `--priority=low` for heavy or background queries so interactive queries
+  keep their share of the processing budget (see [Usage Limits](#usage-limits)).
+
+### Inspecting what LogBasset is doing
+
+```bash
+# Show API request and response details
+logbasset query 'severity >= 3' --start=1h --verbose --log-level=debug
+```
+
+Exit codes let scripts branch on the failure type: `0` success, `1` general or
+API error, `2` usage error, `3` network error, `4` authentication error,
+`5` configuration error, `6` validation error.
 
 ## Building
 
