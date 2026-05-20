@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Install smoke tests (`scripts/smoke-test.sh`, `make smoke-test`) that verify built binaries and release artifacts respond to `--version`, `--help`, and no-credential commands; wired into CI and the release workflow, with an expanded Homebrew formula test block (#44)
 - README recipes for common log investigation workflows and a troubleshooting guide covering auth, time ranges, and empty results (#42)
 - CLI end-to-end tests covering docs examples and JSON/CSV/text output formats against mocked HTTP responses, with no real Scalyr credentials required (#43)
 - `schema` now reports per-command `examples` and a `read_only` flag, and accepts `schema global` for the flags shared by every command (#41)

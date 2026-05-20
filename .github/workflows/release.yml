@@ -46,3 +46,9 @@ jobs:
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
           GORELEASER_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Smoke test release artifact
+        run: |
+          mkdir -p dist/smoke
+          tar -xzf dist/logbasset_Linux_x86_64.tar.gz -C dist/smoke
+          ./scripts/smoke-test.sh dist/smoke/logbasset

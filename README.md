@@ -42,6 +42,28 @@ The binary will be created in the `bin/` directory.
 
 Download the latest binary from the [releases page](https://github.com/andreagrandi/logbasset/releases).
 
+### Verifying an Install
+
+After installing via any method, a quick credential-free smoke check confirms
+the binary works:
+
+```bash
+logbasset --version
+logbasset --help
+```
+
+If you cloned the repository, `make smoke-test` runs the full set of checks
+(version, help, and the no-credential `context` and `schema` commands) against
+the built binary. To smoke-test a Homebrew install, point the script at the
+installed binary:
+
+```bash
+scripts/smoke-test.sh "$(command -v logbasset)"
+```
+
+The Homebrew formula also ships a `brew test logbasset` block that runs the
+same checks automatically.
+
 ## Configuration
 
 You need to make your Scalyr API token available to the tool. LogBasset supports multiple configuration methods:
@@ -496,6 +518,9 @@ make build
 
 # Run tests
 make test
+
+# Smoke-test the built binary (no API credentials needed)
+make smoke-test
 
 # Build for multiple platforms
 make build-all

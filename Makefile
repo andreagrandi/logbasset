@@ -1,4 +1,4 @@
-.PHONY: build test clean fmt vet lint
+.PHONY: build test smoke-test clean fmt vet lint
 
 # Build the binary
 build:
@@ -20,6 +20,10 @@ test-client:
 # Run tests for specific package
 test-cli:
 	go test ./internal/cli
+
+# Smoke-test the built binary (no API credentials required)
+smoke-test: build
+	./scripts/smoke-test.sh bin/logbasset
 
 # Format code
 fmt:
@@ -59,6 +63,7 @@ help:
 	@echo "  test-verbose - Run tests with verbose output"
 	@echo "  test-client  - Run client tests only"
 	@echo "  test-cli     - Run CLI tests only"
+	@echo "  smoke-test   - Smoke-test the built binary"
 	@echo "  fmt          - Format code"
 	@echo "  vet          - Run static analysis"
 	@echo "  lint         - Run linter"
