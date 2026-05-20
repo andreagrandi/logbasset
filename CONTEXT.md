@@ -25,7 +25,7 @@ Server URL (default `https://www.scalyr.com`):
 | `timeseries-query [filter]` | Retrieve timeseries data | none (filter optional) | `--start` |
 | `tail [filter]` | Live tail of logs | none (filter optional) | none |
 | `context` | Print this agent context document | none | none |
-| `schema [command]` | Print JSON schema for command inputs/outputs | none | none |
+| `schema [command]` | Print JSON schema for a command (pass `global` for shared flags) | none | none |
 
 ## Global Flags
 
@@ -39,6 +39,23 @@ Server URL (default `https://www.scalyr.com`):
 | `--timeout` | duration | `30s` | Request timeout (e.g., `30s`, `2m`) |
 | `--error-format` | string | `text` | Error output format: `text` or `json` |
 | `--pager` | bool | false | Pipe output through `$PAGER` (default `less -RF`) when stdout is a terminal |
+
+## Safety and Cost Guidance
+
+Every command is read-only — queries never create, modify, or delete data, so
+they are safe to run without confirmation. The `read_only` field in `schema`
+output reports this for each command.
+
+To keep queries fast and inexpensive:
+- Prefer narrow time ranges (`--start 1h` over `--start 7d`); only add
+  `--end NOW` when you need data right up to the current time.
+- Cap raw-record fetches with `--count`; the `query` default is 10.
+- Use `--priority low` for heavy or background queries so interactive queries
+  stay responsive. The default `high` is best for small, time-sensitive lookups.
+- Aggregations (`power-query`, `numeric-query`, `facet-query`,
+  `timeseries-query`) summarize wide ranges far more cheaply than fetching many
+  raw records with `query`.
+- Raise `--timeout` for queries over wide ranges; the default is 30s.
 
 ## Flags That Do NOT Exist
 
@@ -96,6 +113,23 @@ Use `--error-format json` to get machine-readable errors on stderr:
 ## TTY Auto-Detection
 
 When stdout is not a TTY (piped to another program), the default output format automatically switches to `json`. This can be overridden with an explicit `--output` flag.
+
+## Common Workflows
+
+### Investigate an error spike
+1. Find when errors occurred, bucketed by hour:
+   `logbasset numeric-query 'severity="error"' --function count --start 24h --buckets 24 --output json`
+2. Read sample errors from the affected window:
+   `logbasset query 'severity="error"' --start 2h --count 50 --output json`
+3. Group errors by host to localize the cause:
+   `logbasset power-query 'severity="error" | group count by serverHost' --start 2h --output json`
+
+### Trace a request or correlation ID
+Pass the identifier as a quoted text filter:
+`logbasset query '"req-abc123"' --start 24h --end NOW --output json`
+
+### Rank the most common values of a field
+`logbasset facet-query '*' uriPath --start 24h --count 20 --output json`
 
 ## Examples
 
