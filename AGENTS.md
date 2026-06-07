@@ -89,6 +89,11 @@ of these leaves the docs lying:
   affected command so `logbasset schema` reports the new state.
 - Help strings on the relevant `cobra.Command` flag definitions.
 
+The `skills/logbasset` agent skill is **not** on this list by design: it
+delegates to `logbasset context` and `logbasset schema` at runtime instead of
+restating commands or flags, so a CLI change can never make it stale. Keep it
+generic — do not add per-flag or per-command content to it.
+
 ## Project Structure
 LogBasset follows the standard Go project layout:
 ```

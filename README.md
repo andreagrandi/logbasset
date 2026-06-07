@@ -64,6 +64,22 @@ scripts/smoke-test.sh "$(command -v logbasset)"
 The Homebrew formula also ships a `brew test logbasset` block that runs the
 same checks automatically.
 
+## Use with AI Coding Agents
+
+LogBasset ships an installable [agent skill](https://www.skills.sh/) so your
+coding agent knows when and how to reach for the CLI. Install it alongside the
+binary:
+
+```bash
+npx skills add andreagrandi/logbasset
+```
+
+The skill teaches the agent to use `logbasset` for Scalyr/DataSet log
+investigations and to load the live command reference (`logbasset context`,
+`logbasset schema`) instead of guessing flags. It works with any
+[skills.sh-supported agent](https://www.skills.sh/) (Claude Code, Codex,
+Cursor, and others). The binary must be installed separately (see above).
+
 ## Configuration
 
 You need to make your Scalyr API token available to the tool. LogBasset supports multiple configuration methods:
