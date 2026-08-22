@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Native Windows ARM64 binary release archive
 - Installable agent skill (`skills/logbasset`) for [skills.sh](https://www.skills.sh/) that teaches coding agents when and how to use the CLI, delegating to `logbasset context` and `logbasset schema` for the live command reference
 
 ## v0.5.0 - 2026-05-20
