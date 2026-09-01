@@ -71,7 +71,7 @@ brews:
     directory: Formula
     homepage: "https://github.com/andreagrandi/logbasset"
     description: "LogBasset - A tool for querying and tailing logs"
-    license: "MIT"
+    license: "Apache-2.0"
     test: |
       system "#{bin}/logbasset --version"
       system "#{bin}/logbasset --help"
