@@ -1,0 +1,291 @@
+name: Validate WinGet Manifest
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Stable release tag (vX.Y.Z)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify-release:
+    name: Verify Windows release
+    uses: ./.github/workflows/verify-windows-release.yml
+    permissions:
+      contents: read
+    with:
+      tag: ${{ inputs.tag }}
+
+  generate-and-validate:
+    name: Generate and validate WinGet manifests
+    needs: verify-release
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      PACKAGE_IDENTIFIER: AndreaGrandi.LogBasset
+      RELEASE_TAG: ${{ inputs.tag }}
+      WINGET_CREATE_TAG: v1.12.13.0
+      WINGET_CREATE_SHA256: 24042bd37915805615e6cf969ac57c6439124c3fe85823327f5f3fb24bd9ffea
+      WINGET_STABLE_VERSION: 1.12.440
+
+    steps:
+      - name: Download and verify official WingetCreate
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $ToolName = "wingetcreate.exe"
+          $ToolDirectory = Join-Path $env:RUNNER_TEMP "wingetcreate"
+          [void](New-Item -ItemType Directory -Force -Path $ToolDirectory)
+
+          $ReleaseOutput = @(& gh release view $env:WINGET_CREATE_TAG --repo microsoft/winget-create --json tagName,isDraft,isPrerelease,assets 2>&1)
+          $ReleaseExitCode = $LASTEXITCODE
+          if ($ReleaseExitCode -ne 0) {
+              $Details = ($ReleaseOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+              throw "winget: official WingetCreate release lookup failed (exit code $ReleaseExitCode): $Details"
+          }
+
+          $Release = (($ReleaseOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine) | ConvertFrom-Json
+          if ($Release.tagName -cne $env:WINGET_CREATE_TAG -or $Release.isDraft -or $Release.isPrerelease) {
+              throw "winget: expected a published, non-prerelease WingetCreate release at $env:WINGET_CREATE_TAG"
+          }
+
+          $Assets = @($Release.assets | Where-Object { $_.name -ceq $ToolName })
+          if ($Assets.Count -ne 1) {
+              throw "winget: official release must contain exactly one $ToolName asset"
+          }
+          $ExpectedDigest = "sha256:" + $env:WINGET_CREATE_SHA256
+          if ($Assets[0].digest -cne $ExpectedDigest) {
+              throw "winget: release digest changed for $ToolName; expected $ExpectedDigest, got $($Assets[0].digest)"
+          }
+
+          & gh release download $env:WINGET_CREATE_TAG --repo microsoft/winget-create --pattern $ToolName --dir $ToolDirectory
+          if ($LASTEXITCODE -ne 0) {
+              throw "winget: official WingetCreate download failed"
+          }
+
+          $DownloadedFiles = @(Get-ChildItem -LiteralPath $ToolDirectory -File -Force)
+          if ($DownloadedFiles.Count -ne 1 -or $DownloadedFiles[0].Name -cne $ToolName) {
+              throw "winget: expected exactly $ToolName in the download directory"
+          }
+
+          $ToolPath = Join-Path $ToolDirectory $ToolName
+          $ActualDigest = (Get-FileHash -LiteralPath $ToolPath -Algorithm SHA256).Hash
+          if ($ActualDigest -ine $env:WINGET_CREATE_SHA256) {
+              throw "winget: downloaded WingetCreate SHA256 mismatch"
+          }
+          Add-Content -Path $env:GITHUB_ENV -Value "WINGET_CREATE_PATH=$ToolPath"
+
+      - name: Ensure WinGet is available
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $WingetCommand = Get-Command winget -ErrorAction SilentlyContinue
+          if ($null -eq $WingetCommand) {
+              Write-Host "winget is unavailable; installing the Microsoft-authored Microsoft.WinGet.Client module"
+              Install-Module -Name Microsoft.WinGet.Client `
+                  -RequiredVersion 1.29.280 `
+                  -Repository PSGallery `
+                  -Scope CurrentUser `
+                  -Force `
+                  -AllowClobber `
+                  -Confirm:$false
+              Import-Module Microsoft.WinGet.Client -RequiredVersion 1.29.280 -Force
+              Repair-WinGetPackageManager -Version $env:WINGET_STABLE_VERSION -Force
+          }
+
+          $WingetCommand = Get-Command winget -ErrorAction SilentlyContinue
+          if ($null -eq $WingetCommand) {
+              throw "winget: the Windows Package Manager CLI is unavailable after the official bootstrap"
+          }
+
+          $VersionOutput = @(& winget --version 2>&1)
+          $VersionExitCode = $LASTEXITCODE
+          $VersionText = ($VersionOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+          if ($VersionExitCode -ne 0) {
+              throw "winget: winget --version failed (exit code $VersionExitCode): $VersionText"
+          }
+          $VersionMatch = [regex]::Match($VersionText, '(?<Version>[0-9]+\.[0-9]+\.[0-9]+(?:\.[0-9]+)?)')
+          if (-not $VersionMatch.Success) {
+              throw "winget: could not parse the installed version from winget --version output: $VersionText"
+          }
+          $WingetVersion = [version]$VersionMatch.Groups["Version"].Value
+          if ($WingetVersion -lt [version]"1.5.0") {
+              throw "winget: version $WingetVersion is below the required 1.5.0 ZIP support"
+          }
+          Write-Host "Using winget $WingetVersion"
+
+      - name: Resolve release URL and checksum
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $StableTagPattern = '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+          if ([string]::IsNullOrEmpty($env:RELEASE_TAG) -or $env:RELEASE_TAG -cnotmatch $StableTagPattern) {
+              throw "winget: tag must match vX.Y.Z without leading zeroes: $env:RELEASE_TAG"
+          }
+
+          $Version = $env:RELEASE_TAG.Substring(1)
+          $ArchiveName = "logbasset_Windows_x86_64.zip"
+          $ReleaseUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$env:RELEASE_TAG/$ArchiveName"
+          $ChecksumDirectory = Join-Path $env:RUNNER_TEMP "logbasset-checksums"
+          [void](New-Item -ItemType Directory -Force -Path $ChecksumDirectory)
+
+          & gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --pattern checksums.txt --dir $ChecksumDirectory
+          if ($LASTEXITCODE -ne 0) {
+              throw "winget: release checksum download failed for $env:RELEASE_TAG"
+          }
+
+          $ChecksumsPath = Join-Path $ChecksumDirectory "checksums.txt"
+          if (-not (Test-Path -LiteralPath $ChecksumsPath -PathType Leaf)) {
+              throw "winget: downloaded release checksums.txt is missing"
+          }
+          $ChecksumPattern = '^(?<Hash>[0-9A-Fa-f]{64})\s+' + [regex]::Escape($ArchiveName) + '$'
+          $ChecksumMatches = @(
+              Get-Content -LiteralPath $ChecksumsPath |
+                  ForEach-Object { [regex]::Match($_, $ChecksumPattern) } |
+                  Where-Object { $_.Success }
+          )
+          if ($ChecksumMatches.Count -ne 1) {
+              throw "winget: checksums.txt must contain exactly one entry for $ArchiveName"
+          }
+
+          $ExpectedSha256 = $ChecksumMatches[0].Groups["Hash"].Value.ToUpperInvariant()
+          Add-Content -Path $env:GITHUB_ENV -Value "PACKAGE_VERSION=$Version"
+          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_URL=$ReleaseUrl"
+          Add-Content -Path $env:GITHUB_ENV -Value "EXPECTED_SHA256=$ExpectedSha256"
+
+      - name: Generate update-only manifests
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $OutputDirectory = Join-Path $env:RUNNER_TEMP "winget-manifests"
+          [void](New-Item -ItemType Directory -Force -Path $OutputDirectory)
+          Write-Host "Generating update-only manifests in $OutputDirectory"
+          & $env:WINGET_CREATE_PATH update $env:PACKAGE_IDENTIFIER `
+              --version $env:PACKAGE_VERSION `
+              --urls "$env:RELEASE_URL|x64" `
+              --out $OutputDirectory
+          if ($LASTEXITCODE -ne 0) {
+              throw "winget: WingetCreate update failed; an accepted upstream manifest is required before updates can run"
+          }
+
+          Add-Content -Path $env:GITHUB_ENV -Value "MANIFEST_OUTPUT=$OutputDirectory"
+
+      - name: Validate generated split manifests and contract
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $WingetCommand = Get-Command winget -ErrorAction SilentlyContinue
+          if ($null -eq $WingetCommand) {
+              throw "winget: the Windows Package Manager CLI is unavailable on windows-latest; manifest validation cannot run"
+          }
+
+          $ManifestFiles = @(Get-ChildItem -LiteralPath $env:MANIFEST_OUTPUT -Recurse -File -Filter "*.yaml")
+          if ($ManifestFiles.Count -ne 3) {
+              throw "winget: expected exactly three split manifest files, found $($ManifestFiles.Count)"
+          }
+
+          $ManifestDirectories = @(
+              $ManifestFiles |
+                  ForEach-Object { $_.Directory.FullName } |
+                  Sort-Object -Unique
+          )
+          if ($ManifestDirectories.Count -ne 1) {
+              throw "winget: all three split manifest files must be in exactly one common manifest directory"
+          }
+          $ManifestDirectory = $ManifestDirectories[0]
+          $ManifestLeaf = Split-Path -Path $ManifestDirectory -Leaf
+          if ([string]::IsNullOrWhiteSpace($ManifestLeaf)) {
+              throw "winget: generated split manifests must be contained in a named leaf directory"
+          }
+
+          $ManifestByType = @{}
+          foreach ($ManifestFile in $ManifestFiles) {
+              $Content = Get-Content -LiteralPath $ManifestFile.FullName -Raw
+              $TypeMatch = [regex]::Match($Content, '(?m)^ManifestType:\s*(?<Type>\S+)\s*$')
+              if (-not $TypeMatch.Success) {
+                  throw "winget: ManifestType is missing from $($ManifestFile.Name)"
+              }
+              $ManifestType = $TypeMatch.Groups["Type"].Value
+              if ($ManifestByType.ContainsKey($ManifestType)) {
+                  throw "winget: generated manifests contain duplicate ManifestType $ManifestType"
+              }
+              $ManifestByType[$ManifestType] = $Content
+          }
+
+          foreach ($RequiredType in @("version", "defaultLocale", "installer")) {
+              if (-not $ManifestByType.ContainsKey($RequiredType)) {
+                  throw "winget: generated manifests are not the required split schema; missing $RequiredType manifest"
+              }
+          }
+
+          & winget validate --manifest $ManifestDirectory --disable-interactivity
+          if ($LASTEXITCODE -ne 0) {
+              throw "winget: validation failed for the generated split manifest set"
+          }
+
+          $AllContent = $ManifestByType.Values -join "`n"
+
+          function Assert-ManifestPattern {
+              param(
+                  [string]$Content,
+                  [string]$Pattern,
+                  [string]$Description
+              )
+              if ($Content -notmatch $Pattern) {
+                  throw "winget: generated manifest contract failed: $Description"
+              }
+          }
+
+          $EscapedIdentifier = [regex]::Escape($env:PACKAGE_IDENTIFIER)
+          $EscapedVersion = [regex]::Escape($env:PACKAGE_VERSION)
+          $EscapedUrl = [regex]::Escape($env:RELEASE_URL)
+          $EscapedSha256 = [regex]::Escape($env:EXPECTED_SHA256)
+
+          Assert-ManifestPattern $ManifestByType["version"] "(?m)^PackageIdentifier:\s*$EscapedIdentifier\s*$" "PackageIdentifier"
+          Assert-ManifestPattern $ManifestByType["version"] "(?m)^PackageVersion:\s*$EscapedVersion\s*$" "PackageVersion"
+          Assert-ManifestPattern $ManifestByType["defaultLocale"] "(?m)^License:\s*Apache-2\.0\s*$" "Apache-2.0 license"
+          Assert-ManifestPattern $ManifestByType["installer"] "(?m)^\s*Architecture:\s*x64\s*$" "x64 architecture"
+          Assert-ManifestPattern $ManifestByType["installer"] "(?m)^\s*InstallerType:\s*zip\s*$" "zip installer type"
+          Assert-ManifestPattern $ManifestByType["installer"] "(?m)^\s*InstallerUrl:\s*$EscapedUrl\s*$" "version-specific installer URL"
+          Assert-ManifestPattern $ManifestByType["installer"] "(?m)^\s*InstallerSha256:\s*$EscapedSha256\s*$" "release SHA256"
+          Assert-ManifestPattern $ManifestByType["installer"] "(?m)^\s*NestedInstallerType:\s*portable\s*$" "portable nested installer type"
+          Assert-ManifestPattern $ManifestByType["installer"] "(?m)^\s*RelativeFilePath:\s*logbasset\.exe\s*$" "root logbasset.exe path"
+          Assert-ManifestPattern $ManifestByType["installer"] "(?m)^\s*PortableCommandAlias:\s*logbasset\s*$" "logbasset command alias"
+
+          $ManifestVersionValues = @(
+              [regex]::Matches($AllContent, '(?m)^ManifestVersion:\s*(?<Version>\S+)\s*$') |
+                  ForEach-Object { $_.Groups["Version"].Value } |
+                  ForEach-Object { $_ }
+          )
+          $ManifestVersions = @($ManifestVersionValues | Sort-Object -Unique)
+          if ($ManifestVersionValues.Count -ne 3 -or $ManifestVersions.Count -ne 1 -or $ManifestVersions[0] -cne "1.12.0") {
+              throw "winget: all three manifests must declare exactly ManifestVersion 1.12.0, the current WingetCreate schema version"
+          }
+
+      - name: Upload generated manifests
+        uses: actions/upload-artifact@v6
+        with:
+          name: winget-manifests-${{ inputs.tag }}
+          path: ${{ runner.temp }}/winget-manifests
+          if-no-files-found: error
