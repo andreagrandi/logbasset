@@ -1,0 +1,148 @@
+name: Verify Windows Release
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Stable release tag (vX.Y.Z)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify Windows release
+    permissions:
+      contents: read
+    runs-on: windows-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout verifier scripts
+        uses: actions/checkout@v6
+
+      - name: Verify stable release assets
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $Tag = $env:RELEASE_TAG
+          $StableTagPattern = '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+          if ([string]::IsNullOrEmpty($Tag) -or $Tag -cnotmatch $StableTagPattern) {
+              throw "verify-windows-release: tag must match vX.Y.Z without leading zeroes: $Tag"
+          }
+
+          $MetadataOutput = @(& gh release view $Tag --repo $env:GITHUB_REPOSITORY --json tagName,isDraft,isPrerelease 2>&1)
+          $MetadataExitCode = $LASTEXITCODE
+          if ($MetadataExitCode -ne 0) {
+              $Details = ($MetadataOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+              throw "verify-windows-release: release metadata lookup failed for $Tag (exit code $MetadataExitCode): $Details"
+          }
+
+          $MetadataText = ($MetadataOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+          $Release = $MetadataText | ConvertFrom-Json
+          if ($Release.tagName -cne $Tag) {
+              throw "verify-windows-release: release metadata tag mismatch: expected $Tag, got $($Release.tagName)"
+          }
+          if ($Release.isDraft -or $Release.isPrerelease) {
+              throw "verify-windows-release: release must be published and stable: $Tag"
+          }
+
+          $ZipName = "logbasset_Windows_x86_64.zip"
+          $ChecksumsName = "checksums.txt"
+          $AssetDirectory = Join-Path $env:RUNNER_TEMP ("logbasset-release-" + [Guid]::NewGuid().ToString("N"))
+          [void](New-Item -ItemType Directory -Path $AssetDirectory)
+
+          & gh release download $Tag --repo $env:GITHUB_REPOSITORY --pattern $ZipName --pattern $ChecksumsName --dir $AssetDirectory
+          $DownloadExitCode = $LASTEXITCODE
+          if ($DownloadExitCode -ne 0) {
+              throw "verify-windows-release: release asset download failed for $Tag (exit code $DownloadExitCode)"
+          }
+
+          $ArchivePath = Join-Path $AssetDirectory $ZipName
+          $ChecksumsPath = Join-Path $AssetDirectory $ChecksumsName
+          if (-not (Test-Path -LiteralPath $ArchivePath -PathType Leaf)) {
+              throw "verify-windows-release: downloaded asset is missing: $ZipName"
+          }
+          if (-not (Test-Path -LiteralPath $ChecksumsPath -PathType Leaf)) {
+              throw "verify-windows-release: downloaded asset is missing: $ChecksumsName"
+          }
+
+          $DownloadedFiles = @(Get-ChildItem -LiteralPath $AssetDirectory -File -Force)
+          $UnexpectedFiles = @($DownloadedFiles | Where-Object {
+              $_.Name -cne $ZipName -and $_.Name -cne $ChecksumsName
+          })
+          if ($DownloadedFiles.Count -ne 2 -or $UnexpectedFiles.Count -ne 0) {
+              throw "verify-windows-release: expected exactly $ZipName and $ChecksumsName in the download directory"
+          }
+
+          $ChecksumLines = @(Get-Content -LiteralPath $ChecksumsPath)
+          $TargetNameToken = '(?<!\S)' + [regex]::Escape($ZipName) + '(?!\S)'
+          $TargetLines = @($ChecksumLines | Where-Object { $_ -cmatch $TargetNameToken })
+          if ($TargetLines.Count -eq 0) {
+              throw "verify-windows-release: checksum entry is missing for $ZipName"
+          }
+          if ($TargetLines.Count -ne 1) {
+              throw "verify-windows-release: checksum entry is duplicated for $ZipName"
+          }
+
+          $ChecksumPattern = '^(?<Hash>[0-9A-Fa-f]{64})\s+' + [regex]::Escape($ZipName) + '$'
+          $ChecksumMatch = [regex]::Match(
+              [string]$TargetLines[0],
+              $ChecksumPattern,
+              [System.Text.RegularExpressions.RegexOptions]::CultureInvariant
+          )
+          if (-not $ChecksumMatch.Success) {
+              throw "verify-windows-release: checksum entry is malformed for $ZipName"
+          }
+
+          $ExpectedHash = $ChecksumMatch.Groups["Hash"].Value
+          $ActualHash = (Get-FileHash -LiteralPath $ArchivePath -Algorithm SHA256).Hash
+          if ($ExpectedHash -ine $ActualHash) {
+              throw "verify-windows-release: SHA256 mismatch for $ZipName"
+          }
+
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $Zip = $null
+          try {
+              $Zip = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
+              foreach ($RequiredEntry in @("logbasset.exe", "README.md", "LICENSE")) {
+                  $Entries = @($Zip.Entries | Where-Object { $_.FullName -ceq $RequiredEntry })
+                  if ($Entries.Count -ne 1) {
+                      throw "verify-windows-release: archive must contain exactly one root entry named $RequiredEntry"
+                  }
+              }
+          }
+          finally {
+              if ($null -ne $Zip) {
+                  $Zip.Dispose()
+              }
+          }
+
+          $ExtractDirectory = Join-Path $env:RUNNER_TEMP ("logbasset-extracted-" + [Guid]::NewGuid().ToString("N"))
+          [void](New-Item -ItemType Directory -Path $ExtractDirectory)
+          Expand-Archive -LiteralPath $ArchivePath -DestinationPath $ExtractDirectory
+
+          $ExtractedBinary = Join-Path $ExtractDirectory "logbasset.exe"
+          if (-not (Test-Path -LiteralPath $ExtractedBinary -PathType Leaf)) {
+              throw "verify-windows-release: extracted executable is missing: logbasset.exe"
+          }
+
+          $ExpectedVersion = $Tag.Substring(1)
+          $SmokeScript = Join-Path $env:GITHUB_WORKSPACE "scripts\smoke-test.ps1"
+          if (-not (Test-Path -LiteralPath $SmokeScript -PathType Leaf)) {
+              throw "verify-windows-release: checked-out smoke script is missing: $SmokeScript"
+          }
+          & $SmokeScript -BinaryPath $ExtractedBinary -ExpectedVersion $ExpectedVersion
+          if ($LASTEXITCODE -ne 0) {
+              throw "verify-windows-release: smoke test failed (exit code $LASTEXITCODE)"
+          }

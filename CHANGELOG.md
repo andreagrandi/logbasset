@@ -4,6 +4,7 @@
 
 ### Added
 - Installable agent skill (`skills/logbasset`) for [skills.sh](https://www.skills.sh/) that teaches coding agents when and how to use the CLI, delegating to `logbasset context` and `logbasset schema` for the live command reference
+- Added native Windows smoke coverage and reusable stable-release verification; corrected Homebrew metadata to use the Apache-2.0 license
 
 ## v0.5.0 - 2026-05-20
 

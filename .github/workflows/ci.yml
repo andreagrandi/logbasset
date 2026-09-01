@@ -131,3 +131,35 @@ jobs:
       with:
         name: logbasset-cross-platform
         path: bin/
+
+  windows:
+    name: Windows Build
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: '1.26.1'
+        cache: true
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Verify dependencies
+      run: go mod verify
+
+    - name: Create bin directory
+      shell: pwsh
+      run: New-Item -ItemType Directory -Force -Path .\bin
+
+    - name: Build Windows binary
+      shell: pwsh
+      run: go build -o .\bin\logbasset.exe .\cmd\logbasset
+
+    - name: Smoke test Windows binary
+      shell: pwsh
+      run: pwsh -NoProfile -File .\scripts\smoke-test.ps1 -BinaryPath .\bin\logbasset.exe

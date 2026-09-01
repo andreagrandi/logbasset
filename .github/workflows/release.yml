@@ -52,3 +52,11 @@ jobs:
           mkdir -p dist/smoke
           tar -xzf dist/logbasset_Linux_x86_64.tar.gz -C dist/smoke
           ./scripts/smoke-test.sh dist/smoke/logbasset
+  verify-windows-release:
+    needs: goreleaser
+    if: ${{ !contains(github.ref_name, '-') }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/verify-windows-release.yml
+    with:
+      tag: ${{ github.ref_name }}
