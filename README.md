@@ -42,6 +42,10 @@ The binary will be created in the `bin/` directory.
 
 Download the latest binary from the [releases page](https://github.com/andreagrandi/logbasset/releases).
 
+#### Windows
+
+To install LogBasset on Windows, download `logbasset_Windows_x86_64.zip` for x64 PCs or `logbasset_Windows_arm64.zip` for ARM64 PCs from the [releases page](https://github.com/andreagrandi/logbasset/releases), extract the archive, and add the extracted directory to your system's PATH.
+
 ### Verifying an Install
 
 After installing via any method, a quick credential-free smoke check confirms

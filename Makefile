@@ -54,6 +54,7 @@ build-all:
 	GOOS=darwin GOARCH=amd64 go build -o bin/logbasset-darwin-amd64 ./cmd/logbasset
 	GOOS=darwin GOARCH=arm64 go build -o bin/logbasset-darwin-arm64 ./cmd/logbasset
 	GOOS=windows GOARCH=amd64 go build -o bin/logbasset-windows-amd64.exe ./cmd/logbasset
+	GOOS=windows GOARCH=arm64 go build -o bin/logbasset-windows-arm64.exe ./cmd/logbasset
 
 # Show help
 help:
